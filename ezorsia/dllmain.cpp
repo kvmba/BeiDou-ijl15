@@ -7,6 +7,49 @@
 #include <comutil.h>
 #include "BossHP.h"
 
+// config.ini can use IP or hostname (ServerIP_Address=...).
+// The patch expects an IPv4 dotted string; resolve hostnames to IPv4.
+// On failure, fall back to the original value.
+static std::string ResolveToIpv4String(const std::string& hostOrIp)
+{
+	if (hostOrIp.empty()) return hostOrIp;
+
+	IN_ADDR parsedAddr{};
+	if (InetPtonA(AF_INET, hostOrIp.c_str(), &parsedAddr) == 1) {
+		return hostOrIp;
+	}
+
+	WSADATA wsaData{};
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+		return hostOrIp;
+	}
+
+	addrinfo hints{};
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	addrinfo* result = nullptr;
+	const int gaiRc = getaddrinfo(hostOrIp.c_str(), nullptr, &hints, &result);
+	if (gaiRc != 0 || result == nullptr) {
+		WSACleanup();
+		return hostOrIp;
+	}
+
+	char ipBuf[INET_ADDRSTRLEN]{};
+	const auto* ipv4 = reinterpret_cast<const sockaddr_in*>(result->ai_addr);
+	const PCSTR ipStr = InetNtopA(AF_INET, const_cast<IN_ADDR*>(&ipv4->sin_addr), ipBuf, sizeof(ipBuf));
+
+	freeaddrinfo(result);
+	WSACleanup();
+
+	if (ipStr == nullptr) {
+		return hostOrIp;
+	}
+
+	return std::string(ipStr);
+}
+
 void CreateConsole() {
 	AllocConsole();
 	FILE* stream;
@@ -45,7 +88,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 			ownLoginFrame = reader.GetBoolean("optional", "ownLoginFrame", false);
 			ownCashShopFrame = reader.GetBoolean("optional", "ownCashShopFrame", false);
 			EzorsiaV2WzIncluded = reader.GetBoolean("general", "EzorsiaV2WzIncluded", true);
-			Client::ServerIP_AddressFromINI = reader.Get("general", "ServerIP_Address", "127.0.0.1");
+			Client::ServerIP_AddressFromINI = ResolveToIpv4String(reader.Get("general", "ServerIP_Address", "127.0.0.1"));
 			Client::serverIP_Port = reader.GetInteger("general", "serverIP_Port", 8484);
 			Client::climbSpeedAuto = reader.GetBoolean("optional", "climbSpeedAuto", false);
 			Client::climbSpeed = reader.GetFloat("optional", "climbSpeed", 1.0);
@@ -98,3 +141,4 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	}
 	return TRUE;
 }
+
