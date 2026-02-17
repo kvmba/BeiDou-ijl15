@@ -6,6 +6,7 @@
 #include "ReplacementFuncs.h"
 #include <comutil.h>
 #include "BossHP.h"
+#include "HpMpAlert.h"
 
 // config.ini can use IP or hostname (ServerIP_Address=...).
 // The patch expects an IPv4 dotted string; resolve hostnames to IPv4.
@@ -110,6 +111,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		HookCWvsApp__InitializeResMan(false); //experimental //ty to all the contributors of the ragezone release: Client load .img instead of .wz v62~v92
 		Hook_StringPool__GetString(true); //hook stringpool modification //ty !! popcorn //ty darter
 		Hook_lpfn_NextLevel(true);
+		HookSaveGlobal(true);
+		HookHpMpAlertRecv(true);
 		//Hook_get_unknown(true);
 		//Hook_get_resource_object(true); //helper function hooks  //ty teto for helping me get started
 		//Hook_com_ptr_t_IWzProperty__ctor(true);
@@ -141,4 +144,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	}
 	return TRUE;
 }
+
+
+
+
 
