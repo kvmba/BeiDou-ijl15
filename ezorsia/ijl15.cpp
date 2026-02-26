@@ -11,7 +11,7 @@ FARPROC ijlWrite_Proc;
 void ijl15::CreateHook() {
 	HMODULE hModule = LoadLibraryA("2ijl15.dll");
 	if (hModule == nullptr) {
-		MessageBox(NULL, L"Failed to find 2ijl15.dll file", L"Missing file", 0);
+		MessageBoxW(NULL, L"Failed to find 2ijl15.dll file", L"Missing file", 0);
 		return;
 	}
 	ijlErrorStr_Proc = GetProcAddress(hModule, "ijlErrorStr");
