@@ -8,7 +8,7 @@ FARPROC dwNMCOMemoryFree;
 void NMCO::CreateHook() {
 	HMODULE hModule = LoadLibraryA("nmconew2.dll");
 	if (hModule == nullptr) {
-		MessageBox(NULL, L"Failed to find nmconew2.dll file", L"Missing file", 0);
+		MessageBoxW(NULL, L"Failed to find nmconew2.dll file", L"Missing file", 0);
 		return;
 	}
 	dwNMCOCallFunc = GetProcAddress(hModule, "NMCO_CallNMFunc");
