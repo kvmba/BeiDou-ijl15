@@ -1595,32 +1595,58 @@ __declspec(naked) void wordMapUIcc()
 }
 
 /* 修复技能描述中文换行乱码的问题 */
-int charLen = 55;
+constexpr int kSkillTooltipLineBytes = 55;
+constexpr int kSkillTooltipScanBytes = 60;
+
+inline bool IsGbkLeadByte(unsigned char value) {
+	return value >= 0x81 && value <= 0xFE;
+}
+
+inline bool IsGbkTrailByte(unsigned char value) {
+	return value >= 0x40 && value <= 0xFE && value != 0x7F;
+}
+
+int charLen = kSkillTooltipLineBytes;
 void calcCharLen(const char* word)
 {
-	// std::cout << "文字 " << word << std::endl;
-	const std::string str = std::string(word);
-	auto firstByte = static_cast<unsigned char>(str[0]);
-	// auto secondByte = static_cast<unsigned char>(str[55]);
-
-	if (str.length() < 55)
+	charLen = kSkillTooltipLineBytes;
+	if (word == nullptr || *word == '\0')
 	{
-		charLen = 55;
 		return;
 	}
-	for (int i = 0; i < 60; i++)
+
+	const std::string str(word);
+	if (str.length() <= static_cast<size_t>(kSkillTooltipLineBytes))
 	{
-		firstByte = static_cast<unsigned char>(str[i]);
-		if (firstByte >= 0x81 && firstByte <= 0xFE)
+		return;
+	}
+
+	const size_t scanLimit = str.length() < static_cast<size_t>(kSkillTooltipScanBytes)
+		? str.length()
+		: static_cast<size_t>(kSkillTooltipScanBytes);
+
+	size_t i = 0;
+	while (i < scanLimit)
+	{
+		const unsigned char firstByte = static_cast<unsigned char>(str[i]);
+		size_t step = 1;
+		if (IsGbkLeadByte(firstByte) && (i + 1) < scanLimit)
 		{
-			i++; // 是中文字符跳过双字节
-			continue;
+			const unsigned char secondByte = static_cast<unsigned char>(str[i + 1]);
+			if (IsGbkTrailByte(secondByte))
+			{
+				step = 2;
+			}
 		}
-		if (i >= 55)
+
+		const size_t nextBoundary = i + step;
+		if (nextBoundary >= static_cast<size_t>(kSkillTooltipLineBytes))
 		{
-			charLen = i;
-			break;
+			charLen = static_cast<int>(nextBoundary);
+			return;
 		}
+
+		i = nextBoundary;
 	}
 }
 
