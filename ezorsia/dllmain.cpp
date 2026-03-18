@@ -7,6 +7,7 @@
 #include <comutil.h>
 #include "BossHP.h"
 #include "HpMpAlert.h"
+#include "SelectCharMacFix.h"
 
 // config.ini can use IP or hostname (ServerIP_Address=...).
 // The patch expects an IPv4 dotted string; resolve hostnames to IPv4.
@@ -63,7 +64,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 	case DLL_PROCESS_ATTACH:
 	{
 		//CreateConsole();	//console for devs, use this to log stuff if you want
-
 		INIReader reader("config.ini");
 		if (reader.ParseError() == 0) {
 			Client::m_nGameWidth = reader.GetInteger("general", "width", 1280);
@@ -113,6 +113,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		Hook_lpfn_NextLevel(true);
 		HookSaveGlobal(true);
 		HookHpMpAlertRecv(true);
+		HookSelectCharMacFix(true);
 		//Hook_get_unknown(true);
 		//Hook_get_resource_object(true); //helper function hooks  //ty teto for helping me get started
 		//Hook_com_ptr_t_IWzProperty__ctor(true);
