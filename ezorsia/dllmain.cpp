@@ -7,6 +7,7 @@
 #include <comutil.h>
 #include "BossHP.h"
 #include "HpMpAlert.h"
+#pragma comment(lib, "ws2_32.lib")
 
 // config.ini can use IP or hostname (ServerIP_Address=...).
 // The patch expects an IPv4 dotted string; resolve hostnames to IPv4.
@@ -133,8 +134,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		Client::MoreHook();
 		BossHP::Hook();
 		Client::WorldMap();
+		Client::RefreshRate();
 		std::cout << "GetModuleFileName hook created" << std::endl;
 		ijl15::CreateHook(); //NMCO::CreateHook();
+
 		std::cout << "NMCO hook initialized" << std::endl;
 		break;
 	}
