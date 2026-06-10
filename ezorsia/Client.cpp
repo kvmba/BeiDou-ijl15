@@ -755,6 +755,11 @@ void Client::Chinese() {
 
 	FixBuddy::Hook();
 	if(SwitchChinese) {
+		//创建角色界面女
+		Memory::WriteString(0x00AF6D1C, "  女  ");
+		//创建角色界面男
+		Memory::WriteString(0x00AF6D24, " 男 ");
+
 		// 聊天栏选项
 		Memory::WriteString(0x00AF2B28, "对联盟     ");
 
