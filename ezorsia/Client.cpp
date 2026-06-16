@@ -160,6 +160,7 @@ void Client::UpdateGameStartup() {
 
 	//以下优化字符串显示
 	Memory::PatchNop(0x008E4252, 2);	//修复道具介绍中，中文换行的问题
+	Memory::PatchNop(0x008AD21F, 5);	//移除一转技能点不足检测
 	Memory::CodeCave(skillToolTipNew, 0x008F383E, 6);	//修复技能描述中文换行乱码的问题
 
 	// 报错信息中文
