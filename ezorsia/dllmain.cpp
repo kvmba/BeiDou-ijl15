@@ -135,8 +135,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		Client::MoreHook();
 		BossHP::Hook();
 		Client::WorldMap();
-		Client::RefreshRate();
-		Client::NoPSWDLogin();
+		Client::RefreshRate(); 
 		Client::DeleteChar();
 		std::cout << "GetModuleFileName hook created" << std::endl;
 		ijl15::CreateHook(); //NMCO::CreateHook();

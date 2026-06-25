@@ -999,19 +999,7 @@ void Client::RefreshRate()
 	DetourAttach((LPVOID*)&g_PcCreateObject_IWzPackage, HookPcCreateObject_IWzPackage);
 	DetourTransactionCommit(); 
 }
-
-void Client::NoPSWDLogin()
-{
-	/**
-	*	服务端配置 no_password 可用于无密码登录   
-	*	客户端在触发登录协议之前会检测密码输入框控件中的输入长度   
-	*	如果密码框长度小于5会直接触发弹框密码失败。    
-	*	则如果想实现无校验登录还是需要手动在编辑框输入密码    
-	**/
-	Memory::PatchNop(0x00620EE8, 2);
-	Memory::PatchNop(0x00620F32, 6);
-}
-
+  
 typedef unsigned int (__fastcall *pfunSendDeleteCharPacket)(void* This, int _);
 pfunSendDeleteCharPacket g_SendDeleteCharPacket = (pfunSendDeleteCharPacket)0x005F7C4A;
 unsigned int __fastcall SendDeleteCharPacket(unsigned char* This, int _)
