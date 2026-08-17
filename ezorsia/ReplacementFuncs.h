@@ -1,5 +1,9 @@
 #pragma once
 #include "AutoTypes.h"
+#include <string>
+#include <unordered_map>
+#include <cstring>
+#include <mutex>
 
 static bool ownLoginFrame;
 static bool ownCashShopFrame;
@@ -193,11 +197,7 @@ bool HookCWvsApp__InitializeResMan(bool bEnable)	//resman hook that does nothing
 	return Memory::SetHook(bEnable, reinterpret_cast<void**>(&_CWvsApp__InitializeResMan), _CWvsApp__InitializeResMan_Hook);
 }
 //#pragma optimize("", on)
-struct KeyValuePair {
-	int key;
-	std::string value;
-};
-KeyValuePair newKeyValuePairs[] = {
+static const std::unordered_map<int, std::string> g_stringPoolOverrides = {
     {11, "设置"},
     {12, "新手"},
     {13, "战士"},
@@ -996,7 +996,6 @@ KeyValuePair newKeyValuePairs[] = {
     {941, "请选择...."},
     {942, "男"},
     {943, "女"},
-    {1163, "北斗"},
     {1369, "您所选择的游戏区人数较多，建议您选择其他区创建角色或进行游戏"},
     {1370, "您所选择的游戏区已经人满，请您选择其他区创建角色或进行游戏"},
     {1392, "广告窗被关掉。"},
@@ -2113,55 +2112,78 @@ KeyValuePair newKeyValuePairs[] = {
     {5617, "和 \r"},
     {5639, " 金币"},
 };
+
+static std::unordered_map<unsigned int, std::string> g_stringPoolCache;
+static std::mutex g_stringPoolCacheMutex;
+
 bool Hook_StringPool__GetString(bool bEnable)	//hook stringpool modification //ty !! popcorn //ty darter
 {
 	_StringPool__GetString_t _StringPool__GetString_Hook = [](void* pThis, void* edx, ZXString<char>* result, unsigned int nIdx, char formal) ->  ZXString<char>*
 	{
-		auto ret = _StringPool__GetString(pThis, edx, result, nIdx, formal);
-        if (nIdx == 1163)
-        {
-            *ret = "BeiDou";
-        }
+		// Build a fresh result string and return it (zero m_pStr first, matching the original behavior)
+		auto set_result = [result](const char* s) -> ZXString<char>* {
+			memset(result, 0, sizeof(*result));
+			*result = s;
+			return result;
+		};
+
+		// 1. Chinese translation (hash lookup) -- hit returns directly, skipping the original call
+		if (Client::SwitchChinese)
+		{
+			auto it = g_stringPoolOverrides.find(nIdx);
+			if (it != g_stringPoolOverrides.end())
+			{
+				return set_result(it->second.c_str());
+			}
+		}
+
+		// 2. Resource-path overrides -- hit returns directly
 		switch (nIdx)
 		{
 			case 1307:	//1307_UI_LOGINIMG_COMMON_FRAME = 51Bh
 				if (EzorsiaV2WzIncluded && !ownLoginFrame) {
+					const char* frame = nullptr;
 					switch (Client::m_nGameWidth)
 					{
 						case 1280:	//ty teto for the suggestion to use ZXString<char>::Assign and showing me available resources
-							*ret = ("UI/MapleEzorsiaV2wzfiles.img/Common/frame1280"); break;
+							frame = "UI/MapleEzorsiaV2wzfiles.img/Common/frame1280"; break;
 						case 1366:
-							*ret = ("UI/MapleEzorsiaV2wzfiles.img/Common/frame1366"); break;
+							frame = "UI/MapleEzorsiaV2wzfiles.img/Common/frame1366"; break;
 						case 1600:
-							*ret = ("UI/MapleEzorsiaV2wzfiles.img/Common/frame1600"); break;
+							frame = "UI/MapleEzorsiaV2wzfiles.img/Common/frame1600"; break;
 						case 1920:
-							*ret = ("UI/MapleEzorsiaV2wzfiles.img/Common/frame1920"); break;
+							frame = "UI/MapleEzorsiaV2wzfiles.img/Common/frame1920"; break;
 						case 1024:
-							*ret = ("UI/MapleEzorsiaV2wzfiles.img/Common/frame1024"); break;
+							frame = "UI/MapleEzorsiaV2wzfiles.img/Common/frame1024"; break;
 					}
-					break;
-				}
-			case 1301:	//1301_UI_CASHSHOPIMG_BASE_BACKGRND  = 515h
-				if (EzorsiaV2WzIncluded && !ownCashShopFrame) { *ret = ("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd"); } break;
-			case 1302:	//1302_UI_CASHSHOPIMG_BASE_BACKGRND1 = 516h
-				if (EzorsiaV2WzIncluded && !ownCashShopFrame) { *ret = ("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd1"); } break;
-			case 5361:	//5361_UI_CASHSHOPIMG_BASE_BACKGRND2  = 14F1h			
-				if (EzorsiaV2WzIncluded && !ownCashShopFrame) { *ret = ("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd2"); } break;
-			//case 1302:	//BACKGRND??????
-			//	if (EzorsiaV2WzIncluded && ownCashShopFrame) { *ret = ("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd1"); } break;
-			//case 5361:	//SP_1937_UI_UIWINDOWIMG_STAT_BACKGRND2  = 791h	
-			//	if (EzorsiaV2WzIncluded && ownCashShopFrame) { *ret = ("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd2"); } break;
-			default:
-				if (Client::SwitchChinese)
-				{
-					for (const auto& pair : newKeyValuePairs) {
-						if (nIdx == pair.key) {
-							*ret = pair.value.c_str();
-							break;
-						}
-					}
+					if (frame) { return set_result(frame); }
 				}
 				break;
+			case 1301:	//1301_UI_CASHSHOPIMG_BASE_BACKGRND  = 515h
+				if (EzorsiaV2WzIncluded && !ownCashShopFrame) { return set_result("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd"); }
+				break;
+			case 1302:	//1302_UI_CASHSHOPIMG_BASE_BACKGRND1 = 516h
+				if (EzorsiaV2WzIncluded && !ownCashShopFrame) { return set_result("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd1"); }
+				break;
+			case 5361:	//5361_UI_CASHSHOPIMG_BASE_BACKGRND2  = 14F1h
+				if (EzorsiaV2WzIncluded && !ownCashShopFrame) { return set_result("UI/MapleEzorsiaV2wzfiles.img/Base/backgrnd2"); }
+				break;
+		}
+
+		// 3. Miss -- fall back to the default call (cached, since the API is slow)
+		{
+			std::lock_guard<std::mutex> lock(g_stringPoolCacheMutex);
+			auto it = g_stringPoolCache.find(nIdx);
+			if (it != g_stringPoolCache.end())
+			{
+				return set_result(it->second.c_str());
+			}
+		}
+		auto ret = _StringPool__GetString(pThis, edx, result, nIdx, formal);
+		const char* content = (const char*)(*ret);
+		{
+			std::lock_guard<std::mutex> lock(g_stringPoolCacheMutex);
+			g_stringPoolCache.emplace(nIdx, content ? content : "");
 		}
 		return ret;
 	};
