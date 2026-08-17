@@ -38,16 +38,236 @@ bool HookGetModuleFileName(bool bEnable) {
 /// <summary>
 /// Creates a detour for the User32.dll CreateWindowExA function applying the following changes:
 /// 1. Enable the window minimize box
+/// 2. Make the main game window resizable, keeping its client area locked to the render
+///    resolution's aspect ratio (m_nGameWidth : m_nGameHeight), so the D3D8 backbuffer
+///    (fixed render resolution) is stretched to fill the window.
+/// 3. The window can only be enlarged: its minimum size keeps the render resolution.
 /// </summary>
+
+static HWND g_mainWindow = nullptr;
+static WNDPROC g_origMainWndProc = nullptr;
+static bool g_resizeCursorShown = false;
+
+// Constrain a WM_SIZING rect so the window's client area keeps the render aspect ratio.
+static void ApplyAspectLock(HWND hwnd, RECT* rc, int edge) {
+	RECT adj = { 0, 0, 0, 0 };
+	AdjustWindowRectEx(&adj, (DWORD)GetWindowLongA(hwnd, GWL_STYLE), FALSE, (DWORD)GetWindowLongA(hwnd, GWL_EXSTYLE));
+	int borderW = adj.right - adj.left; // total horizontal border
+	int borderH = adj.bottom - adj.top; // total vertical border (caption + frame)
+
+	int clientW, clientH;
+	if (edge == WMSZ_TOP || edge == WMSZ_BOTTOM) {
+		clientH = (rc->bottom - rc->top) - borderH;
+		clientW = clientH * Client::m_nGameWidth / Client::m_nGameHeight;
+	}
+	else {
+		clientW = (rc->right - rc->left) - borderW;
+		clientH = clientW * Client::m_nGameHeight / Client::m_nGameWidth;
+	}
+
+	int newWinW = clientW + borderW;
+	int newWinH = clientH + borderH;
+
+	switch (edge) {
+	case WMSZ_LEFT: {
+		int vc = (rc->top + rc->bottom) / 2;
+		rc->left = rc->right - newWinW;
+		rc->top = vc - newWinH / 2;
+		rc->bottom = rc->top + newWinH;
+		break;
+	}
+	case WMSZ_RIGHT: {
+		int vc = (rc->top + rc->bottom) / 2;
+		rc->right = rc->left + newWinW;
+		rc->top = vc - newWinH / 2;
+		rc->bottom = rc->top + newWinH;
+		break;
+	}
+	case WMSZ_TOP: {
+		int hc = (rc->left + rc->right) / 2;
+		rc->top = rc->bottom - newWinH;
+		rc->left = hc - newWinW / 2;
+		rc->right = rc->left + newWinW;
+		break;
+	}
+	case WMSZ_BOTTOM: {
+		int hc = (rc->left + rc->right) / 2;
+		rc->bottom = rc->top + newWinH;
+		rc->left = hc - newWinW / 2;
+		rc->right = rc->left + newWinW;
+		break;
+	}
+	case WMSZ_TOPLEFT:
+		rc->left = rc->right - newWinW;
+		rc->top = rc->bottom - newWinH;
+		break;
+	case WMSZ_TOPRIGHT:
+		rc->right = rc->left + newWinW;
+		rc->top = rc->bottom - newWinH;
+		break;
+	case WMSZ_BOTTOMLEFT:
+		rc->left = rc->right - newWinW;
+		rc->bottom = rc->top + newWinH;
+		break;
+	case WMSZ_BOTTOMRIGHT:
+		rc->right = rc->left + newWinW;
+		rc->bottom = rc->top + newWinH;
+		break;
+	}
+}
+
+// Subclassed WndProc for the main window.
+static LRESULT CALLBACK WindowScaleProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+	switch (msg) {
+	case WM_GETMINMAXINFO: {
+		// Only allow enlarging: the minimum window size keeps the render resolution.
+		MINMAXINFO* mmi = (MINMAXINFO*)lParam;
+		RECT adj = { 0, 0, 0, 0 };
+		AdjustWindowRectEx(&adj, (DWORD)GetWindowLongA(hwnd, GWL_STYLE), FALSE, (DWORD)GetWindowLongA(hwnd, GWL_EXSTYLE));
+		mmi->ptMinTrackSize.x = Client::m_nGameWidth + (adj.right - adj.left);
+		mmi->ptMinTrackSize.y = Client::m_nGameHeight + (adj.bottom - adj.top);
+		return TRUE;
+	}
+	case WM_SIZING:
+		ApplyAspectLock(hwnd, (RECT*)lParam, (int)wParam);
+		return TRUE;
+	case WM_NCHITTEST:
+		return DefWindowProcA(hwnd, WM_NCHITTEST, wParam, lParam);
+	case WM_SETCURSOR: {
+		UINT hit = LOWORD(lParam);
+		bool isBorder = (hit == HTLEFT || hit == HTRIGHT || hit == HTTOP || hit == HTBOTTOM ||
+			hit == HTTOPLEFT || hit == HTTOPRIGHT || hit == HTBOTTOMLEFT || hit == HTBOTTOMRIGHT);
+		if (isBorder) {
+			if (!g_resizeCursorShown) {
+				ShowCursor(TRUE); // show the system cursor over the resize border
+				g_resizeCursorShown = true;
+			}
+			switch (hit) {
+			case HTLEFT: case HTRIGHT:
+				SetCursor(LoadCursorA(nullptr, (LPCSTR)IDC_SIZEWE)); break;
+			case HTTOP: case HTBOTTOM:
+				SetCursor(LoadCursorA(nullptr, (LPCSTR)IDC_SIZENS)); break;
+			case HTTOPLEFT: case HTBOTTOMRIGHT:
+				SetCursor(LoadCursorA(nullptr, (LPCSTR)IDC_SIZENWSE)); break;
+			case HTTOPRIGHT: case HTBOTTOMLEFT:
+				SetCursor(LoadCursorA(nullptr, (LPCSTR)IDC_SIZENESW)); break;
+			}
+			return TRUE;
+		}
+		if (g_resizeCursorShown) {
+			ShowCursor(FALSE); // hide the system cursor again over the client area
+			g_resizeCursorShown = false;
+		}
+		break;
+	}
+	}
+	return CallWindowProcA(g_origMainWndProc, hwnd, msg, wParam, lParam);
+}
+
 inline void HookCreateWindowExA(bool bEnable) {
 	static auto create_window_ex_a = decltype(&CreateWindowExA)(GetProcAddress(LoadLibraryA("USER32"), "CreateWindowExA"));
 	static const decltype(&CreateWindowExA) hook = [](DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle, int x, int y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam) -> HWND {
 		dwStyle |= WS_MINIMIZEBOX; // enable minimize button
-        x = (GetSystemMetrics(SM_CXSCREEN) - nWidth) / 2;
-        y = (GetSystemMetrics(SM_CYSCREEN) - nHeight) / 4;
-		return create_window_ex_a(dwExStyle, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+
+		bool isMainWindow = hWndParent == nullptr && lpClassName != nullptr && (ULONG_PTR)lpClassName > 0xFFFF && strcmp(lpClassName, "MapleStoryClass") == 0;
+		if (isMainWindow) {
+			dwStyle |= WS_THICKFRAME | WS_MAXIMIZEBOX; // resizable + maximizable
+		}
+
+		x = (GetSystemMetrics(SM_CXSCREEN) - nWidth) / 2;
+		y = (GetSystemMetrics(SM_CYSCREEN) - nHeight) / 4;
+
+		HWND hwnd = create_window_ex_a(dwExStyle, lpClassName, lpWindowName, dwStyle, x, y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+
+		if (isMainWindow && hwnd != nullptr) {
+			g_mainWindow = hwnd;
+			g_origMainWndProc = (WNDPROC)SetWindowLongA(hwnd, GWL_WNDPROC, (LONG)(LONG_PTR)WindowScaleProc);
+		}
+
+		return hwnd;
 	};
 	Memory::SetHook(bEnable, reinterpret_cast<void**>(&create_window_ex_a), hook);
+}
+
+// ---- DirectInput8 mouse delta scaling -------------------------------------
+// The game reads the mouse as DirectInput8 deltas (GetDeviceState, DIMOUSESTATE2)
+// and accumulates them into a cursor position clamped to the render resolution.
+// When the window is enlarged, scale the deltas so the in-game cursor reaches
+// the full stretched window.
+typedef HRESULT(__stdcall* DI8CreateDevice_t)(void* This, const void* rguid, void** ppDevice, void* punkOuter);
+typedef HRESULT(__stdcall* DI8GetDeviceState_t)(void* This, unsigned int cbData, void* lpvData);
+
+static DI8CreateDevice_t origDI8CreateDevice = nullptr;
+static DI8GetDeviceState_t origDI8GetDeviceState = nullptr;
+static bool g_diCreateDeviceHooked = false;
+static bool g_diGetDeviceStateHooked = false;
+
+static HRESULT __stdcall HookDI8GetDeviceState(void* This, unsigned int cbData, void* lpvData) {
+	HRESULT hr = origDI8GetDeviceState(This, cbData, lpvData);
+	if (SUCCEEDED(hr) && cbData == 20 && lpvData != nullptr) { // DIMOUSESTATE2 = 20 bytes (lX,lY,lZ,rgbButtons[8])
+		LONG* lXY = (LONG*)lpvData;
+		int renderW = Client::m_nGameWidth;
+		int renderH = Client::m_nGameHeight;
+		int winW = renderW, winH = renderH;
+		if (g_mainWindow != nullptr) {
+			RECT rc;
+			if (GetClientRect(g_mainWindow, &rc)) {
+				winW = rc.right - rc.left;
+				winH = rc.bottom - rc.top;
+			}
+		}
+		if (winW > 0 && winW != renderW)
+			lXY[0] = (LONG)(((LONGLONG)lXY[0] * renderW) / winW);
+		if (winH > 0 && winH != renderH)
+			lXY[1] = (LONG)(((LONGLONG)lXY[1] * renderH) / winH);
+	}
+	return hr;
+}
+
+static void PatchDI8GetDeviceState(void* device) {
+	if (g_diGetDeviceStateHooked)
+		return;
+	DWORD* vtbl = *(DWORD**)device;
+	DWORD oldProtect;
+	VirtualProtect(&vtbl[9], sizeof(DWORD), PAGE_READWRITE, &oldProtect); // IDirectInputDevice8::GetDeviceState = slot 9
+	origDI8GetDeviceState = (DI8GetDeviceState_t)vtbl[9];
+	vtbl[9] = (DWORD)HookDI8GetDeviceState;
+	VirtualProtect(&vtbl[9], sizeof(DWORD), oldProtect, &oldProtect);
+	g_diGetDeviceStateHooked = true;
+}
+
+static HRESULT __stdcall HookDI8CreateDevice(void* This, const void* rguid, void** ppDevice, void* punkOuter) {
+	HRESULT hr = origDI8CreateDevice(This, rguid, ppDevice, punkOuter);
+	if (SUCCEEDED(hr) && ppDevice != nullptr && *ppDevice != nullptr)
+		PatchDI8GetDeviceState(*ppDevice);
+	return hr;
+}
+
+static void PatchDI8CreateDevice(void* dinput) {
+	if (g_diCreateDeviceHooked)
+		return;
+	DWORD* vtbl = *(DWORD**)dinput;
+	DWORD oldProtect;
+	VirtualProtect(&vtbl[3], sizeof(DWORD), PAGE_READWRITE, &oldProtect); // IDirectInput8::CreateDevice = slot 3
+	origDI8CreateDevice = (DI8CreateDevice_t)vtbl[3];
+	vtbl[3] = (DWORD)HookDI8CreateDevice;
+	VirtualProtect(&vtbl[3], sizeof(DWORD), oldProtect, &oldProtect);
+	g_diCreateDeviceHooked = true;
+}
+
+typedef HRESULT(__stdcall* DI8Create_t)(void* hinst, unsigned long dwVersion, const void* riidltf, void** ppvOut, void* punkOuter);
+static DI8Create_t origDirectInput8Create = nullptr;
+
+static HRESULT __stdcall HookDirectInput8Create(void* hinst, unsigned long dwVersion, const void* riidltf, void** ppvOut, void* punkOuter) {
+	HRESULT hr = origDirectInput8Create(hinst, dwVersion, riidltf, ppvOut, punkOuter);
+	if (SUCCEEDED(hr) && ppvOut != nullptr && *ppvOut != nullptr)
+		PatchDI8CreateDevice(*ppvOut);
+	return hr;
+}
+
+inline void HookDirectInput8CreateEx(bool bEnable) {
+	origDirectInput8Create = (DI8Create_t)GetProcAddress(LoadLibraryA("dinput8"), "DirectInput8Create");
+	Memory::SetHook(bEnable, (void**)&origDirectInput8Create, (void*)HookDirectInput8Create);
 }
 
 DWORD GetFuncAddress(LPCSTR lpModule, LPCSTR lpFunc)	//ty alias!			//multiclient, not currently working, likely cannot hook early enough with nmconew.dll

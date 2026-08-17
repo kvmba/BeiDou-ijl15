@@ -100,6 +100,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 
 		Hook_CreateMutexA(true); //multiclient //ty darter, angel, and alias!
 		HookCreateWindowExA(true); //default ezorsia
+		HookDirectInput8CreateEx(true); //scale DirectInput8 mouse deltas to the enlarged window
 		HookGetModuleFileName(true); //default ezorsia
 		HookPcCreateObject_IWzResMan(true);
 		HookPcCreateObject_IWzNameSpace(true);

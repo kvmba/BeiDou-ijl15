@@ -190,6 +190,10 @@ void Client::UpdateResolution() {
 	Memory::WriteInt(dwUpdateMouseLimitHPos + 1, m_nGameWidth);	//mov ecx,800 ; CInputSystem::UpdateMouse
 	Memory::WriteInt(dwCursorPosLimitVPos + 1, m_nGameHeight);//mov eax,600
 	Memory::WriteInt(dwCursorPosLimitHPos + 1, m_nGameWidth);	//mov eax,800 ; CInputSystem::SetCursorPos
+	// 光标碰到渲染边界时直接夹在边界，不做 Unacquire/重置中心（放大窗口下避免光标跳回中心）
+	Memory::WriteByte(0x0059AC37, 0x90);	//NOP jnz
+	Memory::WriteByte(0x0059AC38, 0x90);
+	Memory::WriteByte(0x0059AC3E, 0xEB);	//jz -> jmp 始终走正常夹紧路径
 	Memory::WriteInt(dwViewPortHeight + 3, m_nGameHeight);//lea eax,[esi+eax-600]
 	Memory::WriteInt(dwViewPortWidth + 3, m_nGameWidth);	//lea eax,[ecx+eax-800]
 
