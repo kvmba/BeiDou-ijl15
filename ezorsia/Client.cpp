@@ -928,6 +928,8 @@ void Client::MoreHook() {
 	Memory::WriteByte(0x008EC6CF + 1, 0xC8);//海盗
 	Memory::CodeCave(faceHairCave, 0x005C94F3, 18);
 	Memory::CodeCave(canSendPkgTimeCave, 0x00485C28, 10);
+	Memory::CodeCave(ccOnSetField, 0x007769D3, 10); // 地图切换时触发资源缓存GC
+	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
 	if (talkRepeat)
 	{

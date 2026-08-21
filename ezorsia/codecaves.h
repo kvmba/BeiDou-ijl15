@@ -995,7 +995,7 @@ __declspec(naked) void fixMouseWheelHook() {
 	}
 }
 
-// ARRAYS ---- �����̿�ʼ
+// ARRAYS ---- �����̿�ʼ
 unsigned char Array_aDefaultQKM[] = {
 	42, 0, 0, 0,
 	82, 0, 0, 0,
@@ -1315,7 +1315,7 @@ _declspec(naked) void Restore_Array_Expanded() //Thank you Max
 		ret;
 	}
 }
-// �����̽���
+// �����̽���
 
 
 DWORD fixDateFormatRtnAddr = 0x008EBF65;
@@ -1454,14 +1454,14 @@ __declspec(naked) void chatTextPos()
 		cmp[edi + 0D00h], 2
 		jz label_type2
 
-		label_type1 :        // ״̬1 ����
+		label_type1 :        // ״̬1 ����
 		sub eax, 1
 		jmp label_rtn
 
-		label_type2 :        // ״̬2 ���� + ����
+		label_type2 :        // ״̬2 ���� + ����
 		jmp label_rtn
 
-		label_type3 :        // ״̬3 չ��
+		label_type3 :        // ״̬3 չ��
 		sub eax, 2
 
 		label_rtn :
@@ -1594,7 +1594,7 @@ __declspec(naked) void wordMapUIcc()
 	}
 }
 
-/* �޸������������Ļ������������ */
+/* �޸������������Ļ������������ */
 constexpr int kSkillTooltipLineBytes = 55;
 constexpr int kSkillTooltipScanBytes = 60;
 
@@ -1662,5 +1662,36 @@ __declspec(naked) void skillToolTipNew()
 		mov[ebp - 1Ch], eax
 		lea eax, [ebp - 30h]
 		jmp skillToolTipNewRtn
+	}
+}
+
+// 地图切换时触发一轮完整的资源缓存 GC（7 个阶段全部跑完）
+// 趁黑屏期间释放旧地图的过期缓存资源，减少后续游戏中的偶发卡顿
+void ForceCacheGc()
+{
+	DWORD cacheManager = *(DWORD*)0xBE78D4;
+	if (!cacheManager) return;
+	typedef void(__thiscall *GcFunc)(DWORD);
+	for (int i = 0; i < 7; i++) {
+		*(DWORD*)(cacheManager + 0x2B4) = 0;
+		((GcFunc)0x411BBB)(cacheManager);
+	}
+}
+
+// Hook sub_776020 内部 0x7769D3（OnSetField 包处理，地图切换）
+// 时机：新地图资源已全部加载，过渡动画 fade-in（sub_A1F8E3）尚未触发
+// 原始10字节: 39 5D C4 74 09 6A 01 8B CE E8
+//   cmp [ebp-3Ch], ebx / jz short+9 / push 1 / mov ecx, esi / call sub_A1F8E3...
+DWORD dwOnSetFieldRetn = 0x007769DB;
+__declspec(naked) void ccOnSetField() {
+	__asm {
+		pushad
+		call ForceCacheGc
+		popad
+		cmp [ebp-3Ch], ebx
+		jz short _skip
+		push 1
+		_skip:
+		jmp dword ptr [dwOnSetFieldRetn]
 	}
 }
