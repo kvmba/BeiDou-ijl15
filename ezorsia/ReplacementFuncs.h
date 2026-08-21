@@ -39,14 +39,14 @@ bool HookGetModuleFileName(bool bEnable) {
 /// Creates a detour for the User32.dll CreateWindowExA function applying the following changes:
 /// 1. Enable the window minimize box
 /// 2. Make the main game window resizable, keeping its client area locked to the render
-///    resolution's aspect ratio (m_nGameWidth : m_nGameHeight), so the D3D8 backbuffer
+///    resolution's aspect ratio (m_nGameWidth : m_nGameHeight), so the D3D9 backbuffer
 ///    (fixed render resolution) is stretched to fill the window.
 /// 3. The window can only be enlarged: its minimum size keeps the render resolution.
 /// </summary>
 
 static HWND g_mainWindow = nullptr;
 static WNDPROC g_origMainWndProc = nullptr;
-static bool g_resizeCursorShown = false;
+static int g_cursorBump = 0; // extra ShowCursor(TRUE)s we added over the game's own hiding
 
 // Constrain a WM_SIZING rect so the window's client area keeps the render aspect ratio.
 static void ApplyAspectLock(HWND hwnd, RECT* rc, int edge) {
@@ -131,34 +131,58 @@ static LRESULT CALLBACK WindowScaleProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 	case WM_SIZING:
 		ApplyAspectLock(hwnd, (RECT*)lParam, (int)wParam);
 		return TRUE;
+	case WM_MOUSEMOVE:
+	case WM_LBUTTONDOWN:
+	case WM_LBUTTONUP:
+	case WM_LBUTTONDBLCLK:
+	case WM_RBUTTONDOWN:
+	case WM_RBUTTONUP:
+	case WM_RBUTTONDBLCLK:
+	case WM_MBUTTONDOWN:
+	case WM_MBUTTONUP:
+	case WM_MBUTTONDBLCLK: {
+		// the game maps mouse-message client coordinates 1:1 into its render
+		// space; scale them for the enlarged window so clicks/hover align
+		RECT rc;
+		if (GetClientRect(hwnd, &rc)) {
+			int winW = rc.right - rc.left, winH = rc.bottom - rc.top;
+			int renderW = Client::m_nGameWidth, renderH = Client::m_nGameHeight;
+			if (winW > 0 && winH > 0 && (winW != renderW || winH != renderH)) {
+				int x = (SHORT)LOWORD(lParam) * renderW / winW;
+				int y = (SHORT)HIWORD(lParam) * renderH / winH;
+				lParam = MAKELPARAM((WORD)x, (WORD)y);
+			}
+		}
+		break;
+	}
 	case WM_NCHITTEST:
 		return DefWindowProcA(hwnd, WM_NCHITTEST, wParam, lParam);
 	case WM_SETCURSOR: {
 		UINT hit = LOWORD(lParam);
-		bool isBorder = (hit == HTLEFT || hit == HTRIGHT || hit == HTTOP || hit == HTBOTTOM ||
-			hit == HTTOPLEFT || hit == HTTOPRIGHT || hit == HTBOTTOMLEFT || hit == HTBOTTOMRIGHT);
-		if (isBorder) {
-			if (!g_resizeCursorShown) {
-				ShowCursor(TRUE); // show the system cursor over the resize border
-				g_resizeCursorShown = true;
+		if (hit == HTCLIENT) {
+			// over the client the game hides the OS cursor and draws its own
+			// in-game cursor; undo only the visibility we added
+			while (g_cursorBump > 0) {
+				ShowCursor(FALSE);
+				g_cursorBump--;
 			}
-			switch (hit) {
-			case HTLEFT: case HTRIGHT:
-				SetCursor(LoadCursorA(nullptr, (LPCSTR)IDC_SIZEWE)); break;
-			case HTTOP: case HTBOTTOM:
-				SetCursor(LoadCursorA(nullptr, (LPCSTR)IDC_SIZENS)); break;
-			case HTTOPLEFT: case HTBOTTOMRIGHT:
-				SetCursor(LoadCursorA(nullptr, (LPCSTR)IDC_SIZENWSE)); break;
-			case HTTOPRIGHT: case HTBOTTOMLEFT:
-				SetCursor(LoadCursorA(nullptr, (LPCSTR)IDC_SIZENESW)); break;
-			}
-			return TRUE;
+			break; // let the game handle the client cursor
 		}
-		if (g_resizeCursorShown) {
-			ShowCursor(FALSE); // hide the system cursor again over the client area
-			g_resizeCursorShown = false;
+		// non-client area (title bar, resize borders, buttons): the OS cursor
+		// must be visible with the right shape
+		// SNAP DISABLED (was landing at the wrong place); to be replaced after
+		// the game's real cursor logic is analyzed in IDA
+		while (ShowCursor(TRUE) < 0)
+			g_cursorBump++;
+		LPCSTR cur = (LPCSTR)IDC_ARROW;
+		switch (hit) {
+		case HTLEFT: case HTRIGHT: cur = (LPCSTR)IDC_SIZEWE; break;
+		case HTTOP: case HTBOTTOM: cur = (LPCSTR)IDC_SIZENS; break;
+		case HTTOPLEFT: case HTBOTTOMRIGHT: cur = (LPCSTR)IDC_SIZENWSE; break;
+		case HTTOPRIGHT: case HTBOTTOMLEFT: cur = (LPCSTR)IDC_SIZENESW; break;
 		}
-		break;
+		SetCursor(LoadCursorA(nullptr, cur));
+		return TRUE;
 	}
 	}
 	return CallWindowProcA(g_origMainWndProc, hwnd, msg, wParam, lParam);
@@ -189,6 +213,43 @@ inline void HookCreateWindowExA(bool bEnable) {
 	Memory::SetHook(bEnable, reinterpret_cast<void**>(&create_window_ex_a), hook);
 }
 
+// ---- GetCursorPos hook ----------------------------------------------------
+// The login screen (and any absolute cursor reads) maps raw client
+// coordinates into the render resolution. With the enlarged window those
+// must be scaled, otherwise clicks/hover land offset (worse toward the
+// right). Return logical coordinates while the cursor is inside the client.
+typedef BOOL(__stdcall* GetCursorPos_t)(LPPOINT);
+static GetCursorPos_t origGetCursorPos = nullptr;
+static BOOL __stdcall HookGetCursorPos(LPPOINT lpPoint) {
+	if (!origGetCursorPos(lpPoint))
+		return FALSE;
+	if (g_mainWindow != nullptr) {
+		RECT rc;
+		if (GetClientRect(g_mainWindow, &rc)) {
+			int winW = rc.right - rc.left;
+			int winH = rc.bottom - rc.top;
+			int renderW = Client::m_nGameWidth;
+			int renderH = Client::m_nGameHeight;
+			if (winW > 0 && winH > 0 && (winW != renderW || winH != renderH)) {
+				POINT c = *lpPoint;
+				if (ScreenToClient(g_mainWindow, &c) &&
+					c.x >= 0 && c.y >= 0 && c.x < winW && c.y < winH) {
+					POINT s = { (LONG)((LONGLONG)c.x * renderW / winW), (LONG)((LONGLONG)c.y * renderH / winH) };
+					ClientToScreen(g_mainWindow, &s);
+					*lpPoint = s;
+				}
+			}
+		}
+	}
+	return TRUE;
+}
+inline void HookGetCursorPosEx(bool bEnable) {
+	if (!bEnable) return;
+	origGetCursorPos = (GetCursorPos_t)GetProcAddress(LoadLibraryA("user32.dll"), "GetCursorPos");
+	if (!origGetCursorPos) return;
+	Memory::SetHook(true, (void**)&origGetCursorPos, (void*)HookGetCursorPos);
+}
+
 // ---- DirectInput8 mouse delta scaling -------------------------------------
 // The game reads the mouse as DirectInput8 deltas (GetDeviceState, DIMOUSESTATE2)
 // and accumulates them into a cursor position clamped to the render resolution.
@@ -199,9 +260,8 @@ typedef HRESULT(__stdcall* DI8GetDeviceState_t)(void* This, unsigned int cbData,
 
 static DI8CreateDevice_t origDI8CreateDevice = nullptr;
 static DI8GetDeviceState_t origDI8GetDeviceState = nullptr;
-static bool g_diCreateDeviceHooked = false;
-static bool g_diGetDeviceStateHooked = false;
 
+static int g_diDiag = 0;
 static HRESULT __stdcall HookDI8GetDeviceState(void* This, unsigned int cbData, void* lpvData) {
 	HRESULT hr = origDI8GetDeviceState(This, cbData, lpvData);
 	if (SUCCEEDED(hr) && cbData == 20 && lpvData != nullptr) { // DIMOUSESTATE2 = 20 bytes (lX,lY,lZ,rgbButtons[8])
@@ -216,24 +276,44 @@ static HRESULT __stdcall HookDI8GetDeviceState(void* This, unsigned int cbData, 
 				winH = rc.bottom - rc.top;
 			}
 		}
-		if (winW > 0 && winW != renderW)
-			lXY[0] = (LONG)(((LONGLONG)lXY[0] * renderW) / winW);
-		if (winH > 0 && winH != renderH)
-			lXY[1] = (LONG)(((LONGLONG)lXY[1] * renderH) / winH);
+		// Converge the game's cursor onto the OS cursor's scaled position:
+		// the game multiplies every delta by (sensitivity+5)/10 itself, so feed
+		// exactly the difference to the desired position, compensated. The game
+		// cursor position (CInputSystem at 0xBEC33C: x=[590] y=[591]) is read
+		// directly, so alignment holds regardless of sensitivity, clamping,
+		// window size, or entering/leaving the window.
+		if (winW > 0 && winH > 0 && (winW != renderW || winH != renderH) && g_mainWindow != nullptr) {
+			POINT pt;
+			if (origGetCursorPos(&pt)) {
+				ScreenToClient(g_mainWindow, &pt);
+				LONG sx = (LONG)((LONGLONG)pt.x * renderW / winW);
+				LONG sy = (LONG)((LONGLONG)pt.y * renderH / winH);
+				DWORD* pInput = *(DWORD**)0x00BEC33C; // CInputSystem instance
+				if (pInput != nullptr) {
+					LONG curX = *(LONG*)((BYTE*)pInput + 590 * 4);
+					LONG curY = *(LONG*)((BYTE*)pInput + 591 * 4);
+					int sens = *(int*)((BYTE*)pInput + 604 * 4);
+					int mult = sens + 5;
+					if (mult <= 0) mult = 10;
+					lXY[0] = (sx - curX) * 10 / mult;
+					lXY[1] = (sy - curY) * 10 / mult;
+					// limit the per-frame step in case of a garbage read
+					if (lXY[0] > 100) lXY[0] = 100; else if (lXY[0] < -100) lXY[0] = -100;
+					if (lXY[1] > 100) lXY[1] = 100; else if (lXY[1] < -100) lXY[1] = -100;
+				}
+			}
+		}
 	}
 	return hr;
 }
 
 static void PatchDI8GetDeviceState(void* device) {
-	if (g_diGetDeviceStateHooked)
-		return;
 	DWORD* vtbl = *(DWORD**)device;
 	DWORD oldProtect;
 	VirtualProtect(&vtbl[9], sizeof(DWORD), PAGE_READWRITE, &oldProtect); // IDirectInputDevice8::GetDeviceState = slot 9
 	origDI8GetDeviceState = (DI8GetDeviceState_t)vtbl[9];
 	vtbl[9] = (DWORD)HookDI8GetDeviceState;
 	VirtualProtect(&vtbl[9], sizeof(DWORD), oldProtect, &oldProtect);
-	g_diGetDeviceStateHooked = true;
 }
 
 static HRESULT __stdcall HookDI8CreateDevice(void* This, const void* rguid, void** ppDevice, void* punkOuter) {
@@ -244,15 +324,12 @@ static HRESULT __stdcall HookDI8CreateDevice(void* This, const void* rguid, void
 }
 
 static void PatchDI8CreateDevice(void* dinput) {
-	if (g_diCreateDeviceHooked)
-		return;
 	DWORD* vtbl = *(DWORD**)dinput;
 	DWORD oldProtect;
 	VirtualProtect(&vtbl[3], sizeof(DWORD), PAGE_READWRITE, &oldProtect); // IDirectInput8::CreateDevice = slot 3
 	origDI8CreateDevice = (DI8CreateDevice_t)vtbl[3];
 	vtbl[3] = (DWORD)HookDI8CreateDevice;
 	VirtualProtect(&vtbl[3], sizeof(DWORD), oldProtect, &oldProtect);
-	g_diCreateDeviceHooked = true;
 }
 
 typedef HRESULT(__stdcall* DI8Create_t)(void* hinst, unsigned long dwVersion, const void* riidltf, void** ppvOut, void* punkOuter);
@@ -266,8 +343,15 @@ static HRESULT __stdcall HookDirectInput8Create(void* hinst, unsigned long dwVer
 }
 
 inline void HookDirectInput8CreateEx(bool bEnable) {
+	if (!bEnable) return;
 	origDirectInput8Create = (DI8Create_t)GetProcAddress(LoadLibraryA("dinput8"), "DirectInput8Create");
-	Memory::SetHook(bEnable, (void**)&origDirectInput8Create, (void*)HookDirectInput8Create);
+	Memory::SetHook(true, (void**)&origDirectInput8Create, (void*)HookDirectInput8Create);
+	// also patch the game's import cell directly: guaranteed interception
+	// even if the export hook misses
+	DWORD old;
+	VirtualProtect((LPVOID)0x00AF0024, sizeof(DWORD), PAGE_READWRITE, &old);
+	*(DWORD*)0x00AF0024 = (DWORD)HookDirectInput8Create;
+	VirtualProtect((LPVOID)0x00AF0024, sizeof(DWORD), old, &old);
 }
 
 DWORD GetFuncAddress(LPCSTR lpModule, LPCSTR lpFunc)	//ty alias!			//multiclient, not currently working, likely cannot hook early enough with nmconew.dll
