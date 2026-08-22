@@ -1681,17 +1681,25 @@ void ForceCacheGc()
 // Hook sub_776020 内部 0x7769D3（OnSetField 包处理，地图切换）
 // 时机：新地图资源已全部加载，过渡动画 fade-in（sub_A1F8E3）尚未触发
 // 原始10字节: 39 5D C4 74 09 6A 01 8B CE E8
-//   cmp [ebp-3Ch], ebx / jz short+9 / push 1 / mov ecx, esi / call sub_A1F8E3...
-DWORD dwOnSetFieldRetn = 0x007769DB;
+//   cmp [ebp-3Ch], ebx / jz short loc_7769E1 / push 1 / mov ecx, esi / call sub_A1F8E3
+//   注意最后那条 call 只有首字节 E8（0x7769DC）落在被覆盖区内：
+//   CodeCave 会把操作码 NOP 掉，所以 cave 里必须补全整条 call，
+//   并跳回 loc_7769E1（0x7769E1），绝不能跳回覆盖区内（否则会执行
+//   call 残留的位移字节 02 8F 2A 00 → 直接访问违例闪退）
+DWORD dwOnSetFieldCallTarget = 0x00A1F8E3;
+DWORD dwOnSetFieldRetn = 0x007769E1;
 __declspec(naked) void ccOnSetField() {
 	__asm {
 		pushad
 		call ForceCacheGc
 		popad
 		cmp [ebp-3Ch], ebx
-		jz short _skip
+		jnz short _fadein
+		jmp dword ptr [dwOnSetFieldRetn] // 原 jz 路径：跳过 push 和 fade-in 调用
+	_fadein:
 		push 1
-		_skip:
+		mov ecx, esi
+		call dword ptr [dwOnSetFieldCallTarget] // 补回被 NOP 掉的 call sub_A1F8E3
 		jmp dword ptr [dwOnSetFieldRetn]
 	}
 }
