@@ -19,62 +19,74 @@ static bool g_upscaleEnabled = true;
 // ---- embedded ps_2_0 sharp-bilinear shader (compiled with fxc) ----
 // c0 = texel size of the INPUT texture (1/srcW, 1/srcH).
 // c1 = scale (dstW/srcW, dstH/srcH).
-// Bilinear in texel interiors, nearest near texel centers so edges/text stay
-// crisp when upscaled. Works at any integer or non-integer scale.
+// Bilinear near texel edges only; interiors stay flat so edges/text stay
+// crisp when upscaled.
+//
+// Source (compiled: fxc /T ps_2_0 /E main /O3):
+/*
+sampler2D imageSmp : register(s0);
+float4 c0 : register(c0);
+float4 c1 : register(c1);
+
+float4 main(float2 uv : TEXCOORD0) : COLOR0
+{
+    float2 texel = c0.xy;
+    float2 scale = c1.xy;
+    float2 coords = uv / texel;
+    float2 snapped = floor(coords);
+    float2 fr = saturate((coords - snapped - 0.5) / scale + 0.5);
+    float2 suv = (snapped + fr) * texel;
+    return tex2D(imageSmp, suv);
+}
+*/
 static const BYTE g_ps20_main[] =
 {
-      0,   2, 255, 255, 254, 255,  46,   0,  67,  84,
-     65,  66,  28,   0,   0,   0, 139,   0,   0,   0,
-      0,   2, 255, 255,   3,   0,   0,   0,  28,   0,
-      0,   0,   0,   1,   0,   0, 132,   0,   0,   0,
-     88,   0,   0,   0,   2,   0,   0,   0,   1,   0,
-      2,   0,  92,   0,   0,   0,   0,   0,   0,   0,
-    108,   0,   0,   0,   2,   0,   1,   0,   1,   0,
-      6,   0,  92,   0,   0,   0,   0,   0,   0,   0,
-    111,   0,   0,   0,   3,   0,   0,   0,   1,   0,
-      2,   0, 116,   0,   0,   0,   0,   0,   0,   0,
-     99,  48,   0, 171,   1,   0,   3,   0,   1,   0,
-      4,   0,   1,   0,   0,   0,   0,   0,   0,   0,
-     99,  49,   0, 115,  48,   0, 171, 171,   4,   0,
-     12,   0,   1,   0,   1,   0,   1,   0,   0,   0,
-      0,   0,   0,   0, 112, 115,  95,  50,  95,  48,
-      0,  77, 105,  99, 114, 111, 115, 111, 102, 116,
-     32,  40,  82,  41,  32,  72,  76,  83,  76,  32,
-     83, 104,  97, 100, 101, 114,  32,  67, 111, 109,
-    112, 105, 108, 101, 114,  32,  49,  48,  46,  49,
-      0, 171,  81,   0,   0,   5,   2,   0,  15, 160,
-      0,   0,   0,  63,   0,   0,   0, 191,   0,   0,
-    128,  63,   0,   0,   0,   0,  31,   0,   0,   2,
-      0,   0,   0, 128,   0,   0,   3, 176,  31,   0,
-      0,   2,   0,   0,   0, 144,   0,   8,  15, 160,
-      6,   0,   0,   2,   0,   0,   1, 128,   1,   0,
-      0, 160,   6,   0,   0,   2,   0,   0,   2, 128,
-      1,   0,  85, 160,   4,   0,   0,   4,   0,   0,
-      3, 128,   0,   0, 228, 128,   2,   0,   0, 161,
-      2,   0,   0, 160,   6,   0,   0,   2,   1,   0,
-      1, 128,   0,   0,   0, 160,   6,   0,   0,   2,
-      1,   0,   2, 128,   0,   0,  85, 160,   5,   0,
-      0,   3,   0,   0,  12, 128,   1,   0,  27, 128,
-      0,   0,  27, 176,  19,   0,   0,   2,   1,   0,
-      3, 128,   0,   0,  27, 128,   2,   0,   0,   3,
-      0,   0,  12, 128,   0,   0, 228, 128,   1,   0,
-     27, 129,   2,   0,   0,   3,   1,   0,   3, 128,
-      1,   0, 228, 128,   2,   0,  85, 160,  11,   0,
-      0,   3,   2,   0,   3, 128,   1,   0, 228, 129,
-      0,   0, 228, 129,  10,   0,   0,   3,   1,   0,
-     12, 128,   0,   0,  27, 128,   2,   0,  27, 128,
-      2,   0,   0,   3,   0,   0,   3, 128,   1,   0,
-     27, 128,   1,   0, 228, 128,   4,   0,   0,   4,
-      0,   0,   3, 128,   0,   0, 228, 128,   1,   0,
-    228, 160,   0,   0,  27, 128,   2,   0,   0,   3,
-      0,   0,   3, 128,   0,   0, 228, 128,   2,   0,
-      0, 160,   5,   0,   0,   3,   0,   0,   3, 128,
-      0,   0, 228, 128,   0,   0, 228, 160,  66,   0,
-      0,   3,   0,   0,  15, 128,   0,   0, 228, 128,
-      0,   8, 228, 160,   1,   0,   0,   2,   0,   0,
-      8, 128,   2,   0, 170, 160,   1,   0,   0,   2,
-      0,   8,  15, 128,   0,   0, 228, 128, 255, 255,
-      0,   0,
+       0,    2,  255,  255,  254,  255,   47,    0,   67,   84,
+      65,   66,   28,    0,    0,    0,  143,    0,    0,    0,
+       0,    2,  255,  255,    3,    0,    0,    0,   28,    0,
+       0,    0,    0,  129,    0,    0,  136,    0,    0,    0,
+      88,    0,    0,    0,    2,    0,    0,    0,    1,    0,
+       2,    0,   92,    0,    0,    0,    0,    0,    0,    0,
+     108,    0,    0,    0,    2,    0,    1,    0,    1,    0,
+       6,    0,   92,    0,    0,    0,    0,    0,    0,    0,
+     111,    0,    0,    0,    3,    0,    0,    0,    1,    0,
+       2,    0,  120,    0,    0,    0,    0,    0,    0,    0,
+      99,   48,    0,  171,    1,    0,    3,    0,    1,    0,
+       4,    0,    1,    0,    0,    0,    0,    0,    0,    0,
+      99,   49,    0,  105,  109,   97,  103,  101,   83,  109,
+     112,    0,    4,    0,   12,    0,    1,    0,    1,    0,
+       1,    0,    0,    0,    0,    0,    0,    0,  112,  115,
+      95,   50,   95,   48,    0,   77,  105,   99,  114,  111,
+     115,  111,  102,  116,   32,   40,   82,   41,   32,   72,
+      76,   83,   76,   32,   83,  104,   97,  100,  101,  114,
+      32,   67,  111,  109,  112,  105,  108,  101,  114,   32,
+      49,   48,   46,   49,    0,  171,   81,    0,    0,    5,
+       2,    0,   15,  160,    0,    0,    0,  191,    0,    0,
+       0,   63,    0,    0,    0,    0,    0,    0,    0,    0,
+      31,    0,    0,    2,    0,    0,    0,  128,    0,    0,
+       3,  176,   31,    0,    0,    2,    0,    0,    0,  144,
+       0,    8,   15,  160,    6,    0,    0,    2,    0,    0,
+       1,  128,    0,    0,    0,  160,    6,    0,    0,    2,
+       0,    0,    2,  128,    0,    0,   85,  160,    5,    0,
+       0,    3,    0,    0,   12,  128,    0,    0,   27,  128,
+       0,    0,   27,  176,   19,    0,    0,    2,    1,    0,
+       3,  128,    0,    0,   27,  128,    2,    0,    0,    3,
+       0,    0,   12,  128,    0,    0,  228,  128,    1,    0,
+      27,  129,    4,    0,    0,    4,    0,    0,    3,  128,
+       0,    0,  228,  176,    0,    0,  228,  128,    0,    0,
+      27,  129,    2,    0,    0,    3,    0,    0,    3,  128,
+       0,    0,  228,  128,    2,    0,    0,  160,    6,    0,
+       0,    2,    1,    0,    1,  128,    1,    0,    0,  160,
+       6,    0,    0,    2,    1,    0,    2,  128,    1,    0,
+      85,  160,    4,    0,    0,    4,    0,    0,   19,  128,
+       0,    0,  228,  128,    1,    0,  228,  128,    2,    0,
+      85,  160,    2,    0,    0,    3,    0,    0,    3,  128,
+       0,    0,  228,  128,    0,    0,   27,  128,    5,    0,
+       0,    3,    0,    0,    3,  128,    0,    0,  228,  128,
+       0,    0,  228,  160,   66,    0,    0,    3,    0,    0,
+      15,  128,    0,    0,  228,  128,    0,    8,  228,  160,
+       1,    0,    0,    2,    0,    8,   15,  128,    0,    0,
+     228,  128,  255,  255,    0,    0
 };
 
 // ---- state ----
@@ -82,7 +94,7 @@ static IDirect3DDevice9* g_gameDev = nullptr;
 static HWND g_d3d9Window = nullptr;
 static IDirect3DSwapChain9* g_swap = nullptr;      // our window-sized additional swap chain
 static UINT g_swapW = 0, g_swapH = 0;
-static IDirect3DTexture9* g_tex = nullptr;         // game-frame copy (on g_gameDev)
+static IDirect3DTexture9* g_tex = nullptr;         // game-frame copy (on g_gameDev, RT-usage)
 static IDirect3DTexture9* g_tex2x = nullptr;       // 2x render-target intermediate
 static IDirect3DPixelShader9* g_shader = nullptr;  // sharp-bilinear pixel shader
 static IDirect3DStateBlock9* g_sb = nullptr;       // on g_gameDev
@@ -184,7 +196,7 @@ static void RenderQuad(IDirect3DDevice9* dev, IDirect3DTexture9* tex, UINT texW,
     dev->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_SELECTARG1);
     dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
     dev->SetTextureStageState(0, D3DTSS_TEXCOORDINDEX, 0);
-    dev->SetPixelShader(NULL);
+    dev->SetPixelShader(NULL); // clear any shader the game left bound
     dev->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_TEX1);
 
     // --- Pass 1: nearest-neighbor 2x into the intermediate render target ---
@@ -286,45 +298,31 @@ static HRESULT __stdcall HookPresent(void* This, const RECT* pSrc, const RECT* p
     gameRt->GetDesc(&dsc);
     if (dsc.Width == 0 || dsc.Height == 0) { gameRt->Release(); return origPresent(This, pSrc, pDst, hOverride, pDirty); }
 
-    // (re)create frame-copy texture + 2x intermediate when the game's render size changes
-    if (!g_tex) {
-        if (FAILED(g_gameDev->CreateTexture(dsc.Width, dsc.Height, 1, 0, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &g_tex, NULL))) {
+    // (re)create the frame-copy textures when the game's render size changes.
+    // RENDER_TARGET usage so they can be refreshed on the GPU via StretchRect
+    // (a plain POOL_DEFAULT texture cannot be written without CPU locks,
+    // and its LockRect always fails in D3D9).
+    if (!g_tex || g_gameW != dsc.Width || g_gameH != dsc.Height) {
+        if (g_tex) { g_tex->Release(); g_tex = nullptr; }
+        if (g_tex2x) { g_tex2x->Release(); g_tex2x = nullptr; }
+        if (FAILED(g_gameDev->CreateTexture(dsc.Width, dsc.Height, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &g_tex, NULL))) {
             gameRt->Release();
             return origPresent(This, pSrc, pDst, hOverride, pDirty);
         }
-        g_gameW = dsc.Width; g_gameH = dsc.Height;
         if (FAILED(g_gameDev->CreateTexture(dsc.Width * 2, dsc.Height * 2, 1, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &g_tex2x, NULL)))
             g_tex2x = nullptr;
+        g_gameW = dsc.Width; g_gameH = dsc.Height;
     }
 
-    IDirect3DSurface9* sysSurf = nullptr;
-    if (FAILED(g_gameDev->CreateOffscreenPlainSurface(dsc.Width, dsc.Height, dsc.Format, D3DPOOL_SYSTEMMEM, &sysSurf, NULL)) || sysSurf == nullptr) {
+    // GPU copy of the current frame into our texture (no CPU locks involved)
+    IDirect3DSurface9* texSurf = nullptr;
+    if (FAILED(g_tex->GetSurfaceLevel(0, &texSurf)) || texSurf == nullptr) {
         gameRt->Release();
         return origPresent(This, pSrc, pDst, hOverride, pDirty);
     }
-    if (FAILED(g_gameDev->GetRenderTargetData(gameRt, sysSurf))) {
-        gameRt->Release();
-        sysSurf->Release();
-        return origPresent(This, pSrc, pDst, hOverride, pDirty);
-    }
-
-    D3DLOCKED_RECT lr;
-    if (FAILED(sysSurf->LockRect(&lr, NULL, D3DLOCK_READONLY)) || lr.pBits == nullptr) {
-        gameRt->Release();
-        sysSurf->Release();
-        return origPresent(This, pSrc, pDst, hOverride, pDirty);
-    }
-
-    D3DLOCKED_RECT dr;
-    bool ok = SUCCEEDED(g_tex->LockRect(0, &dr, NULL, D3DLOCK_DISCARD)) && dr.pBits;
-    if (ok) {
-        for (UINT y = 0; y < dsc.Height; y++)
-            memcpy((BYTE*)dr.pBits + (size_t)y * dr.Pitch, (BYTE*)lr.pBits + (size_t)y * lr.Pitch, (size_t)dsc.Width * 4);
-        g_tex->UnlockRect(0);
-    }
-    sysSurf->UnlockRect();
-    sysSurf->Release();
-    if (!ok) { gameRt->Release(); return origPresent(This, pSrc, pDst, hOverride, pDirty); }
+    HRESULT hrSr = g_gameDev->StretchRect(gameRt, NULL, texSurf, NULL, D3DTEXF_NONE);
+    texSurf->Release();
+    if (FAILED(hrSr)) { gameRt->Release(); return origPresent(This, pSrc, pDst, hOverride, pDirty); }
 
     // draw into OUR swap chain's backbuffer
     IDirect3DSurface9* swapBb = nullptr;
