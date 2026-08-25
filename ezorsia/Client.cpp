@@ -929,6 +929,7 @@ void Client::MoreHook() {
 	Memory::CodeCave(faceHairCave, 0x005C94F3, 18);
 	Memory::CodeCave(canSendPkgTimeCave, 0x00485C28, 10);
 	Memory::CodeCave(ccOnSetField, 0x007769D3, 10); // 地图切换时触发资源缓存GC
+	Memory::CodeCave(ccQuestBudget, 0x00A1F93F, 13); // Quest遍历循环注入30ms预算（防557ms卡顿）
 	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
 	if (talkRepeat)

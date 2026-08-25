@@ -1703,3 +1703,42 @@ __declspec(naked) void ccOnSetField() {
 		jmp dword ptr [dwOnSetFieldRetn]
 	}
 }
+
+// ====== 卡顿修复：sub_A1F8E3 Quest 遍历 30ms 预算 ======
+// 根因：每10秒 Quest 列表遍历（2831次迭代固定）偶发单次操作慢20倍 → 557ms 卡顿。
+// 修复：循环条件处注入预算检查，累计超 30ms 直接跳出循环，放弃剩余迭代。
+// Quest 检查为周期性任务，跳过一轮无害（下个10秒周期继续）。
+// GetTickCount（1ms精度，轻量），首迭代记录起点，之后每迭代检查。
+extern "C" volatile DWORD g_questBudgetStart = 0;
+extern "C" DWORD g_questBudgetMs = 30;
+// hook 0xA1F93F (13B): cmp eax,[ecx-4]; jnb loc_A1FA63; mov ax,[ecx+eax*2]
+// 原 jnb 目标 = 0xA1FA63（循环结束）
+DWORD dwQuestBudgetRetn = 0x00A1F94C;
+DWORD dwQuestBudgetEnd = 0x00A1FA63;
+__declspec(naked) void ccQuestBudget() {
+	__asm {
+		cmp eax, dword ptr [ecx-4]
+		jnb skipcnt
+		push eax
+		push ecx
+		call GetTickCount
+		cmp dword ptr [g_questBudgetStart], 0
+		jz setstart
+		sub eax, dword ptr [g_questBudgetStart]
+		cmp eax, dword ptr [g_questBudgetMs]
+		jb continue_loop
+		pop ecx
+		pop eax
+		jmp dword ptr [dwQuestBudgetEnd]
+	setstart:
+		mov dword ptr [g_questBudgetStart], eax
+	continue_loop:
+		pop ecx
+		pop eax
+		mov eax, dword ptr [ebp-1Ch]
+		mov ax, word ptr [ecx+eax*2]
+		jmp dword ptr [dwQuestBudgetRetn]
+	skipcnt:
+		jmp dword ptr [dwQuestBudgetEnd]
+	}
+}
