@@ -129,7 +129,8 @@ void Client::UpdateGameStartup() {
 	Memory::WriteByte(0x0049CFE8 + 1, 0x01);//likely requires affecting WINAPI CreateProcess, which requires a launcher		//because a packed client cannot be directly edited for these offsets
 	Memory::WriteByte(0x0049D398 + 1, 0x01);//remove elevation requests	//still not working unfortunately
 
-	Memory::FillBytes(0x00AFE084, 0x00, 0x006FE0B2 - 0x006FE084);//remove the existing server IP address in client
+	Memory::FillBytes(0x00AFE084, 0x00, 48);//清除客户端中的服务器IP地址（3份 × 16字节）
+	//原代码用0x2E(46)字节，但3份IP需要48字节，已修正
 	const char* serverIP_Address = Client::ServerIP_AddressFromINI.c_str();
 	Memory::WriteString(0x00AFE084, serverIP_Address);//write the user-set IP address
 	Memory::WriteString(0x00AFE084 + 16, serverIP_Address);//write the user-set IP address
