@@ -70,6 +70,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		if (reader.ParseError() == 0) {
 			Client::m_nGameWidth = reader.GetInteger("general", "width", 1280);
 			Client::m_nGameHeight = reader.GetInteger("general", "height", 720);
+			Client::windowScale = reader.GetReal("general", "windowScale", 1.0);
 			Client::MsgAmount = reader.GetInteger("general", "MsgAmount", 26);
 			Client::CustomLoginFrame = reader.GetBoolean("general", "CustomLoginFrame", true);
 			Client::WindowedMode = reader.GetBoolean("general", "WindowedMode", true);

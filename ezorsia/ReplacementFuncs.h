@@ -42,6 +42,8 @@ bool HookGetModuleFileName(bool bEnable) {
 ///    resolution's aspect ratio (m_nGameWidth : m_nGameHeight), so the D3D9 backbuffer
 ///    (fixed render resolution) is stretched to fill the window.
 /// 3. The window can only be enlarged: its minimum size keeps the render resolution.
+/// 4. The initial window size is the render resolution scaled by Client::windowScale
+///    (config.ini: windowScale, e.g. 1.5 = client area 1280x720*1.5 = 1920x1080).
 /// </summary>
 
 static HWND g_mainWindow = nullptr;
@@ -196,6 +198,17 @@ inline void HookCreateWindowExA(bool bEnable) {
 		bool isMainWindow = hWndParent == nullptr && lpClassName != nullptr && (ULONG_PTR)lpClassName > 0xFFFF && strcmp(lpClassName, "MapleStoryClass") == 0;
 		if (isMainWindow) {
 			dwStyle |= WS_THICKFRAME | WS_MAXIMIZEBOX; // resizable + maximizable
+
+			// initial client area = render resolution * windowScale (windowScale 1 -> original size);
+			// compensate for the window frame so the client area is exact
+			if (Client::windowScale > 1.0) {
+				int clientW = (int)(Client::m_nGameWidth * Client::windowScale + 0.5);
+				int clientH = (int)(Client::m_nGameHeight * Client::windowScale + 0.5);
+				RECT adj = { 0, 0, 0, 0 };
+				AdjustWindowRectEx(&adj, dwStyle, FALSE, dwExStyle);
+				nWidth = clientW + (adj.right - adj.left);
+				nHeight = clientH + (adj.bottom - adj.top);
+			}
 		}
 
 		x = (GetSystemMetrics(SM_CXSCREEN) - nWidth) / 2;

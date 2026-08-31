@@ -8,6 +8,7 @@
 
 int Client::m_nGameHeight = 720; // 游戏窗口高度
 int Client::m_nGameWidth = 1280; // 游戏窗口宽度
+double Client::windowScale = 1.0; // 窗口启动缩放倍率
 int Client::MsgAmount = 26; // 消息显示数量
 bool Client::CustomLoginFrame = true; // 使用自定义登录界面
 bool Client::WindowedMode = true; // 窗口模式
