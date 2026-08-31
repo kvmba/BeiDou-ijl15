@@ -130,6 +130,20 @@ static LRESULT CALLBACK WindowScaleProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 		mmi->ptMinTrackSize.y = Client::m_nGameHeight + (adj.bottom - adj.top);
 		return TRUE;
 	}
+	case WM_WINDOWPOSCHANGING: {
+		// the game resizes the window back to the render resolution via
+		// SetWindowPos after creation (InitializeGr2D); re-apply windowScale
+		WINDOWPOS* pwp = (WINDOWPOS*)lParam;
+		if (Client::windowScale > 1.0 && !(pwp->flags & SWP_NOSIZE) && pwp->cx > 0 && pwp->cy > 0) {
+			RECT adj = { 0, 0, 0, 0 };
+			AdjustWindowRectEx(&adj, (DWORD)GetWindowLongA(hwnd, GWL_STYLE), FALSE, (DWORD)GetWindowLongA(hwnd, GWL_EXSTYLE));
+			if (pwp->cx - (adj.right - adj.left) == Client::m_nGameWidth && pwp->cy - (adj.bottom - adj.top) == Client::m_nGameHeight) {
+				pwp->cx = (int)(Client::m_nGameWidth * Client::windowScale + 0.5) + (adj.right - adj.left);
+				pwp->cy = (int)(Client::m_nGameHeight * Client::windowScale + 0.5) + (adj.bottom - adj.top);
+			}
+		}
+		break;
+	}
 	case WM_SIZING:
 		ApplyAspectLock(hwnd, (RECT*)lParam, (int)wParam);
 		return TRUE;
