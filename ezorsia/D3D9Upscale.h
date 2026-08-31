@@ -14,7 +14,6 @@
 #include <d3d9.h>
 #include <cstring>
 
-static bool g_upscaleEnabled = true;
 
 // ---- embedded ps_2_0 sharp-bilinear shader (compiled with fxc) ----
 // c0 = texel size of the INPUT texture (1/srcW, 1/srcH).
@@ -282,7 +281,7 @@ static HRESULT __stdcall HookPresent(void* This, const RECT* pSrc, const RECT* p
             PatchDI8GetDeviceState((void*)pMse);
     }
 
-    if (!g_upscaleEnabled || This != g_gameDev || pSrc != nullptr || pDst != nullptr || hOverride != nullptr)
+    if (This != g_gameDev || pSrc != nullptr || pDst != nullptr || hOverride != nullptr)
         return origPresent(This, pSrc, pDst, hOverride, pDirty);
 
     RECT rc = {0,0,0,0};

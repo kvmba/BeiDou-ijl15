@@ -98,7 +98,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 			Client::climbSpeed = reader.GetFloat("optional", "climbSpeed", 1.0);
 			Client::talkRepeat = reader.GetBoolean("optional", "talkRepeat", false);
 			Client::talkTime = reader.GetInteger("optional", "talkTime", 2000);
-			g_upscaleEnabled = reader.GetBoolean("general", "shaderUpscale", true);
 		}
 
 		Hook_CreateMutexA(true); //multiclient //ty darter, angel, and alias!
