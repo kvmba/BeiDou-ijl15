@@ -1771,17 +1771,30 @@ __declspec(naked) void ccQuestBudget() {
 // 入口：eax = 基准层(7/2)，edx = 5*(3000*m_lPage - m_lZMass)，ecx = CUser。
 DWORD dwClimbLayerBoostRetn = 0x0092FD4D;   // 跳回：push eax
 DWORD dwClimbLayerBoostAmount = 30000;      // 爬绳时 z 抬升量（1 层单位）
+// 仅当返回地址落在 sub_92E499 内才认为 ecx 是 CUser（见下方说明）
+DWORD dwClimbCallerLo = 0x0092E499;
+DWORD dwClimbCallerHi = 0x0092E916;
 __declspec(naked) void ccClimbLayerBoost() {
 	__asm {
+		// 【ecx 语义取决于调用者 —— 必须先校验，否则闪退】
+		//   sub_92E499 0x92e545 mov ecx, ebx  -> ecx = CUser   （可安全读 stance）
+		//   sub_936EFF 0x936f19 lea ecx,[esi-4] -> ecx = this-4（读 [ecx+528h] 越界）
+		// ebx 是被调用者保存寄存器，必须先压栈再使用，且所有出口都要恢复。
 		push ebx
-		mov ebx, dword ptr [ecx + 528h]        // stance
+		mov ebx, dword ptr [esp + 4]           // 返回地址（push ebx 后下移 4）
+		cmp ebx, dword ptr [dwClimbCallerLo]
+		jb short _skip                          // 非 sub_92E499 -> 不碰 ecx
+		cmp ebx, dword ptr [dwClimbCallerHi]
+		ja short _skip
+		// 到此 ecx 确为 CUser，读 stance（CUser+0x528）
+		mov ebx, dword ptr [ecx + 528h]
 		cmp ebx, 14                             // LADDER_RIGHT
-		jb short _notclimbing
+		jb short _skip
 		cmp ebx, 17                             // ROPE_LEFT
-		ja short _notclimbing
+		ja short _skip
 		add eax, dword ptr [dwClimbLayerBoostAmount]
-	_notclimbing:
-		pop ebx
+	_skip:
+		pop ebx                                 // 所有出口统一在此恢复
 		lea eax, [eax + edx * 2 - 3FFF8ADAh]    // 补全被覆盖的原指令
 		jmp dword ptr [dwClimbLayerBoostRetn]
 	}
