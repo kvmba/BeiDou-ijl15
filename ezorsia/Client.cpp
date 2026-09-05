@@ -934,6 +934,17 @@ void Client::MoreHook() {
 	Memory::CodeCave(ccQuestBudget, 0x00A1F93F, 13); // Quest遍历循环注入30ms预算（防557ms卡顿）
 	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
+	// 角色绘制层 z 值抬升 —— 让远程玩家显示在楼梯/绳索之前。
+	// 0x0097C240: lea edx, [edx+edx-3FFF8AD5h]  (sub_97BD9A, 角色本体绘制)
+	//   z = 10*(3000*[CUser+0x130] - [CUser+0x134]) - 1073711829
+	//   立即数在 +3 处 (4字节, 有符号)。增大立即数 => 抬高 z => 绘制更靠前。
+	// 原因: CUser::ApplyMove (0x9B7C09) 有两层 foothold 判定, 第二层按坐标兜底
+	//   (sub_A45585(x,y))。角色爬绳时悬空, 兜底查不到平台, 层字段 0x130/0x134
+	//   滞留在进图时的低值, 于是被绳索盖住。抬升 z 可绕过该问题。
+	// 写死 0x40000 (z +262144), 约等于 8.7 个 layer 单位 (每层 30000)。
+	// 注意: 该函数本地与远程玩家共用, 自己的角色也会一起抬升。
+	Memory::WriteInt(0x0097C243, 0xC004752B); // 原值 0xC000752B
+
 	if (talkRepeat)
 	{
 		Memory::WriteByte(0x004905ED + 1, 5);
