@@ -934,16 +934,24 @@ void Client::MoreHook() {
 	Memory::CodeCave(ccQuestBudget, 0x00A1F93F, 13); // Quest遍历循环注入30ms预算（防557ms卡顿）
 	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
-	// 角色绘制层 z 值抬升 —— 让远程玩家显示在楼梯/绳索之前。
-	// 0x0097C240: lea edx, [edx+edx-3FFF8AD5h]  (sub_97BD9A, 角色本体绘制)
-	//   z = 10*(3000*[CUser+0x130] - [CUser+0x134]) - 1073711829
-	//   立即数在 +3 处 (4字节, 有符号)。增大立即数 => 抬高 z => 绘制更靠前。
-	// 原因: CUser::ApplyMove (0x9B7C09) 有两层 foothold 判定, 第二层按坐标兜底
-	//   (sub_A45585(x,y))。角色爬绳时悬空, 兜底查不到平台, 层字段 0x130/0x134
-	//   滞留在进图时的低值, 于是被绳索盖住。抬升 z 可绕过该问题。
-	// 写死 0x40000 (z +262144), 约等于 8.7 个 layer 单位 (每层 30000)。
-	// 注意: 该函数本地与远程玩家共用, 自己的角色也会一起抬升。
-	Memory::WriteInt(0x0097C243, 0xC004752B); // 原值 0xC000752B
+	// 角色绘制层 z 值抬升 —— 诊断用: patch 全部 5 处候选 (含主角色的 sub_48BBCA)。
+	// 层公式: z = 10*(3000*layer76 - layer77) - 10737118xx
+	// 立即数在 lea 指令 +3 处 (4字节, 有符号)。增大立即数 => 抬高 z => 绘制更靠前。
+	//
+	// 【主角色层】0x0048D6EE —— sub_48BBCA (9531字节), 调用者含
+	//   CUser_DecodeSpawnPacket (SPAWN_PLAYER 处理) / sub_983C04 / sub_50D897,
+	//   即远程玩家绘制层设置。原值 0xC000752C。
+	// 其余 4 处常量相同, 一并抬高以防静态判断有偏差:
+	//   0x0050DC52 sub_50DC09 (105)  —— foothold 回调层
+	//   0x006D26C7 sub_6D267D (162)  —— 由 sub_6D089A 等调用 (NPC?)
+	//   0x0097B0FE sub_97A3FB (6559) —— 名字牌/状态层
+	//   0x0097C243 sub_97BD9A (2250) —— 仅 v35==3 时调用的特殊状态绘制
+	// 抬升量 0x400000 (z +4194304, 约 140 个 layer 单位), 确保命中即必然可见。
+	Memory::WriteInt(0x0048D6EE, 0xC040752C); // 主角色层, 原值 0xC000752C
+	Memory::WriteInt(0x0050DC52, 0xC040752B);
+	Memory::WriteInt(0x006D26C7, 0xC040752B);
+	Memory::WriteInt(0x0097B0FE, 0xC040752B);
+	Memory::WriteInt(0x0097C243, 0xC040752B);
 
 	if (talkRepeat)
 	{
