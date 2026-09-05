@@ -957,8 +957,13 @@ void Client::MoreHook() {
 	// 【现在的做法】仅在 stance 为爬梯/绳索（14..17）时抬升，站立时保持原值。
 	// cave 内会先校验返回地址，只在 sub_92E499 这条路径（ecx 确为 CUser）读
 	// stance —— 另一条路径 sub_936EFF 传的是 this-4，直接读会越界闪退。
-	// 抬升量 dwClimbLayerBoostAmount（默认 1 层单位 = 30000）。
-	Memory::CodeCave(ccClimbLayerBoost, 0x0092FD46, 5);
+	// 【停用 · 已定位真正根因，无需客户端 patch】
+	// bot 的 MOVE_PLAYER 包格式错误：缺少 CMovePath 头部的 4 字节（起始 x/y），
+	// 导致客户端把 y 的低字节当成 numCommands，后续 fh/stance 全部错位 —— 这才是
+	// 远程角色绘制层异常的原因（真人客户端包格式正确，所以正常）。
+	// 已在 solomapling-plugin 修正 sendMovementPacket / teleportPath 的包布局。
+	// 待验证服务端修复效果；若仍有问题再考虑重新启用。
+	// Memory::CodeCave(ccClimbLayerBoost, 0x0092FD46, 5);
 
 	if (talkRepeat)
 	{
