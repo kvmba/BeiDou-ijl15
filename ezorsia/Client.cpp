@@ -948,17 +948,13 @@ void Client::MoreHook() {
 	// 印证它就是 NPC 的。sub_92FD16 用 0x3FFF8ADA，即玩家版，且被
 	// CUser_DecodeSpawnPacket (SPAWN_PLAYER) 调用 —— 只影响玩家，不动 NPC。
 	//
-	// 只改一个 4 字节立即数即可，改为注入条件判断（见 codecaves.h）。
-	//
-	// 【为什么不做无条件抬升】三次实测：
-	//   +33 层 (z+=0x100000) -> 压到 UI 之上
-	//   +2  层 (z+=60000)    -> bot 站到护栏外面
-	//   +1  层 (z+=30000)    -> 仍盖过护栏
-	// bot 的 m_lPage 停留在生成时的地面层，护栏可能只高 0~1 层，固定抬升必然越界。
-	//
-	// 【现在的做法】仅在 stance 为爬梯/绳索（14..17）时抬升，站立时保持原值，
-	// 因此护栏不受影响。抬升量 dwClimbLayerBoostAmount（默认 1 层单位 = 30000）。
-	Memory::CodeCave(ccClimbLayerBoost, 0x0092FD46, 5);
+	// 【暂时停用 · 上一版按 stance 判断会闪退】
+	// ccClimbLayerBoost 读 [ecx+528h] 取 stance，但 sub_92FD16 的 ecx 语义
+	// 依赖调用者：sub_92E499（被 CUser_DecodeSpawnPacket 调用）传 CUser，
+	// 而 sub_936EFF 传 (this - 4)。后者下 [ecx+528h] 越界 -> 闪退。
+	// 需要改为只依赖 sub_92FD16 内部已取到的 CVecCtrl（读其绳索字段），
+	// 待确定 083 中 CVecCtrl 的绳索偏移后再启用。
+	// Memory::CodeCave(ccClimbLayerBoost, 0x0092FD46, 5);
 
 	if (talkRepeat)
 	{
