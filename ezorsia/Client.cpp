@@ -934,26 +934,12 @@ void Client::MoreHook() {
 	Memory::CodeCave(ccQuestBudget, 0x00A1F93F, 13); // Quest遍历循环注入30ms预算（防557ms卡顿）
 	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
-	// 角色绘制层 z 值抬升 —— 让远程玩家显示在楼梯/绳索之前。
-	//
-	// 层公式: z = 10*(3000*layer76 - layer77) - 1073711828
-	//   layer76/layer77 = CUser +0x130 / +0x134, 由 CUser_ApplyMovement_SetFoothold 写入。
-	//
-	// 【实测结论】sub_48BBCA (9531字节, 由 CUser_DecodeSpawnPacket 调用) 内有 3 处
-	// 设置绘制层, 对应 3 个部件对象, 必须全部抬高:
-	//   0x0048D6EE  lea edx,[edx+edx-3FFF8AD4h]  部件A  原值 0xC000752C
-	//   0x0048D73E  sub esi, 6665AAFh            部件B  原值 0x06665AAF  <- 上次漏了这处
-	//   0x0048D8D3  call [ecx+0B4h]              部件C  层值来自 sub_44337D(), 无常量可改
-	// 前两处数学等价: 部件B = (3000*L - L2 - 107371183)*10, 与部件A 仅差 2。
-	// 因部件B 是 sub 指令且外面还要 *10, 其立即数增量需除以 10。
-	//
-	// 【重要 · 已实测排除】0x006D26C7 (sub_6D267D) 是【NPC】的层设置
-	//   (调用链 CField_OnSpawnNpc -> sub_6D089A -> sub_6D267D), patch 它会导致
-	//   NPC 跑到最上层。此处不再改动。
-	//
-	// 抬升量: 部件A +0x400000; 部件B 立即数 -419430 等价 z +0x400000。
-	Memory::WriteInt(0x0048D6EE, 0xC040752C); // 部件A, 原值 0xC000752C
-	Memory::WriteInt(0x0048D73E, 0x065FF449); // 部件B, 原值 0x06665AAF
+	// 远程玩家爬绳时被绳索遮挡 —— 层字段 fallback 抬升。
+	// 在 CUser::ApplyMove (sub_9B7C09 @0x9B7C61) 的坐标兜底失败分支注入：
+	// 爬绳悬空时 sub_A45585 返回 0，原逻辑直接跳过层更新，导致 CUser+0x130
+	// 滞留低值。cave 内将其抬到固定高值（幂等，不累加）。详见 codecaves.h。
+	// 注意：绘制函数本地/远程共用，此改动对自己的角色同样生效。
+	Memory::CodeCave(ccCharLayerFallback, 0x009B7C61, 5);
 
 	if (talkRepeat)
 	{

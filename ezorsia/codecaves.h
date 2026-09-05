@@ -1742,3 +1742,40 @@ __declspec(naked) void ccQuestBudget() {
 		jmp dword ptr [dwQuestBudgetEnd]
 	}
 }
+
+// ====== 远程玩家爬绳时被绳索遮挡：层字段 fallback 抬升 ======
+// 根因：CUser::ApplyMove (sub_9B7C09) 有两层平台判定：
+//   ① CUser_ApplyMovement_SetFoothold —— 按 fh 字段解析（地面 ID / 绳索索引）
+//   ② sub_A45585(角色x, 角色y)        —— 坐标兜底，重新查平台并覆盖层字段
+// 爬绳时角色悬空，② 查不到平台（eax==0），走 jz 直接跳过层更新，
+// 于是层字段 CUser+0x130 / +0x134 滞留旧值，绘制层偏低 → 被绳索盖住。
+// 绘制侧无法唯一定位（sub_48BBCA / sub_97BD9A / sub_6D267D 均非玩家层，
+// 其中 sub_6D267D 实测是 NPC 层），改为在层字段【写入侧】兜底抬升，
+// 这样任何读取 0x130/0x134 的绘制函数都会生效。
+//
+// hook 0x9B7C61 (5B): 85 C0 (test eax,eax) 74 30 (jz loc_9B7C95) 8B (mov edx,.. 首字节)
+//   被覆盖的 5 字节里含 mov edx,[eax+1Ch] 的首字节 8B，cave 内必须补全整条指令，
+//   且只能跳回覆盖区之外（0x9B7C68 / 0x9B7C95），否则会执行残留位移字节。
+// 入口时：eax = sub_A45585 结果（0 = 悬空/爬绳），esi = CUser 对象。
+DWORD dwCharLayerFallbackRetn = 0x009B7C68; // 正常路径：cmp [esi+130h], edx
+DWORD dwCharLayerFallbackSkip = 0x009B7C95; // 原 jz 目标：跳过层更新
+__declspec(naked) void ccCharLayerFallback() {
+	__asm {
+		test eax, eax
+		jz short _airborne
+		// 兜底命中：补全被吃掉首字节的 mov edx,[eax+1Ch]，回到正常路径
+		mov edx, dword ptr [eax + 1Ch]
+		jmp dword ptr [dwCharLayerFallbackRetn]
+	_airborne:
+		// 悬空（爬绳/空中）：把 layer76 抬到固定高值，使绘制层压过绳索。
+		// z = 10*(3000*layer76 - layer77) - 1073711828，每层单位 = 30000。
+		// 用【比较后赋值】而非 add：本分支每帧都会进来，累加会迅速溢出。
+		// 只在当前值低于阈值时抬升，已抬升则保持，保证幂等。
+		// 必须跳 dwCharLayerFallbackSkip：Retn 处会把层字段覆盖回平台值。
+		cmp dword ptr [esi + 130h], 0x10000
+		jae short _keep
+		mov dword ptr [esi + 130h], 0x10000
+	_keep:
+		jmp dword ptr [dwCharLayerFallbackSkip]
+	}
+}
