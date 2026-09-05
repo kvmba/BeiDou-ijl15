@@ -934,24 +934,26 @@ void Client::MoreHook() {
 	Memory::CodeCave(ccQuestBudget, 0x00A1F93F, 13); // Quest遍历循环注入30ms预算（防557ms卡顿）
 	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
-	// 角色绘制层 z 值抬升 —— 诊断用: patch 全部 5 处候选 (含主角色的 sub_48BBCA)。
-	// 层公式: z = 10*(3000*layer76 - layer77) - 10737118xx
-	// 立即数在 lea 指令 +3 处 (4字节, 有符号)。增大立即数 => 抬高 z => 绘制更靠前。
+	// 角色绘制层 z 值抬升 —— 让远程玩家显示在楼梯/绳索之前。
 	//
-	// 【主角色层】0x0048D6EE —— sub_48BBCA (9531字节), 调用者含
-	//   CUser_DecodeSpawnPacket (SPAWN_PLAYER 处理) / sub_983C04 / sub_50D897,
-	//   即远程玩家绘制层设置。原值 0xC000752C。
-	// 其余 4 处常量相同, 一并抬高以防静态判断有偏差:
-	//   0x0050DC52 sub_50DC09 (105)  —— foothold 回调层
-	//   0x006D26C7 sub_6D267D (162)  —— 由 sub_6D089A 等调用 (NPC?)
-	//   0x0097B0FE sub_97A3FB (6559) —— 名字牌/状态层
-	//   0x0097C243 sub_97BD9A (2250) —— 仅 v35==3 时调用的特殊状态绘制
-	// 抬升量 0x400000 (z +4194304, 约 140 个 layer 单位), 确保命中即必然可见。
-	Memory::WriteInt(0x0048D6EE, 0xC040752C); // 主角色层, 原值 0xC000752C
-	Memory::WriteInt(0x0050DC52, 0xC040752B);
-	Memory::WriteInt(0x006D26C7, 0xC040752B);
-	Memory::WriteInt(0x0097B0FE, 0xC040752B);
-	Memory::WriteInt(0x0097C243, 0xC040752B);
+	// 层公式: z = 10*(3000*layer76 - layer77) - 1073711828
+	//   layer76/layer77 = CUser +0x130 / +0x134, 由 CUser_ApplyMovement_SetFoothold 写入。
+	//
+	// 【实测结论】sub_48BBCA (9531字节, 由 CUser_DecodeSpawnPacket 调用) 内有 3 处
+	// 设置绘制层, 对应 3 个部件对象, 必须全部抬高:
+	//   0x0048D6EE  lea edx,[edx+edx-3FFF8AD4h]  部件A  原值 0xC000752C
+	//   0x0048D73E  sub esi, 6665AAFh            部件B  原值 0x06665AAF  <- 上次漏了这处
+	//   0x0048D8D3  call [ecx+0B4h]              部件C  层值来自 sub_44337D(), 无常量可改
+	// 前两处数学等价: 部件B = (3000*L - L2 - 107371183)*10, 与部件A 仅差 2。
+	// 因部件B 是 sub 指令且外面还要 *10, 其立即数增量需除以 10。
+	//
+	// 【重要 · 已实测排除】0x006D26C7 (sub_6D267D) 是【NPC】的层设置
+	//   (调用链 CField_OnSpawnNpc -> sub_6D089A -> sub_6D267D), patch 它会导致
+	//   NPC 跑到最上层。此处不再改动。
+	//
+	// 抬升量: 部件A +0x400000; 部件B 立即数 -419430 等价 z +0x400000。
+	Memory::WriteInt(0x0048D6EE, 0xC040752C); // 部件A, 原值 0xC000752C
+	Memory::WriteInt(0x0048D73E, 0x065FF449); // 部件B, 原值 0x06665AAF
 
 	if (talkRepeat)
 	{
