@@ -1768,17 +1768,28 @@ __declspec(naked) void ccQuestBudget() {
 //   在原语义基础上给 layer76 加一个偏移，使其压过绳索所在层。
 //   层公式 z = 10*(3000*layer76 - layer77) - 1073711828，每层单位 = 30000。
 //
+// 【为什么 fh 为空分支也要抬升】
+//   服务端若发 fh=0（writeShort(0)），LookupFootholdById 失败，就走 fh==0 分支，
+//   layer76 被设为默认常数 7、layer77 = 0 —— 只改“fh 有效”分支会完全失效。
+//   实测现象“同一个 bot 部分绳索正常”也由此解释：绳索分支取的是每条绳索
+//   各自的 layer（*(rope+24)），而 bot 的层恒定 7，于是
+//     绳索 layer < 7 -> bot 在前（正常）
+//     绳索 layer > 7 -> 绳索在前（被遮住）
+//   两条分支都抬升，才能让 bot 压过所有绳索。
+//
 // 覆盖 0x9B1373 起 14 字节（cmp 6B + mov 6B + jz 2B），cave 内补齐这三条后分流。
 // 入口：ebx = 角色对象，edi = fh 对象，ecx = 0。
-DWORD dwCharLayerBoostRetnValid = 0x009B138D; // fh 有效路径：push edi
-DWORD dwCharLayerBoostRetnNoFh = 0x009B13B1;  // fh 为空路径：原 jz 目标
-DWORD dwCharLayerBoostAmount = 0x14;          // layer76 += 20 (z += 600000)
+// 两分支都汇合到 0x9B13BD（原 jmp 目标，cover 区之外的公共续点）。
+DWORD dwCharLayerBoostRetnValid = 0x009B138D; // fh 有效路径：push edi（继续 sub_9B1553/9B1646）
+DWORD dwCharLayerBoostRetnCommon = 0x009B13BD; // 两分支汇合点：test [ebp+arg_14], 0FFFFFFFEh
+DWORD dwCharLayerBoostAmount = 0x14;           // layer76 += 20 (z += 600000)
+DWORD dwCharLayerBoostDefaultFloor = 0x07;     // fh 为空时的基准层（沿用原默认 7）
 __declspec(naked) void ccCharLayerBoost() {
 	__asm {
 		cmp dword ptr [ebx + 110h], ecx
 		mov dword ptr [ebx + 118h], ecx
 		jz short _nofh
-		// fh 有效：layer76 = *(fh+28) + boost，layer77 = *(fh+32)
+		// fh 有效：layer76 = *(fh+28) + boost，layer77 = *(fh+32)，再走原后续调用
 		mov eax, dword ptr [edi + 1Ch]
 		add eax, dword ptr [dwCharLayerBoostAmount]
 		mov dword ptr [ebx + 130h], eax
@@ -1786,6 +1797,13 @@ __declspec(naked) void ccCharLayerBoost() {
 		mov dword ptr [ebx + 134h], eax
 		jmp dword ptr [dwCharLayerBoostRetnValid]
 	_nofh:
-		jmp dword ptr [dwCharLayerBoostRetnNoFh]
+		// fh 为空：原本 layer76 = 7（eax）、layer77 = 0（ecx）。
+		// 改为 layer76 = 7 + boost、layer77 = 0，然后直接去汇合点
+		// （跳过 0x9B13B1 那两条 mov，否则会被写回 7）。
+		mov eax, dword ptr [dwCharLayerBoostDefaultFloor]
+		add eax, dword ptr [dwCharLayerBoostAmount]
+		mov dword ptr [ebx + 130h], eax
+		mov dword ptr [ebx + 134h], ecx
+		jmp dword ptr [dwCharLayerBoostRetnCommon]
 	}
 }
