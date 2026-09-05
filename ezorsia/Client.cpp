@@ -934,37 +934,6 @@ void Client::MoreHook() {
 	Memory::CodeCave(ccQuestBudget, 0x00A1F93F, 13); // Quest遍历循环注入30ms预算（防557ms卡顿）
 	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
-	// 远程玩家被绳索遮挡 —— 抬升绘制层 z 值（玩家专用点）。
-	//
-	// sub_92FD16 (68 字节) 计算玩家的绘制层 z，然后交给 sub_452195 -> put_z 应用：
-	//     z = (m_bActive ? 7 : 2) + 10*(3000*m_lPage - m_lZMass) - 1073711834
-	//   汇编: 92fd3e and eax,5 / 92fd41 inc / 92fd45 inc  -> 基准 7 或 2
-	//         92fd46 lea eax,[eax+edx*2-3FFF8ADAh]        <- 立即数在 +3
-	//
-	// 【为什么这里才是玩家专用】借助有符号的 095 客户端比对确认：
-	//   CUser::SetLayerZ (0x8DFC10) 常量 1073711834 (0x3FFF8ADA)  <- 玩家
-	//   CNpc::SetLayerZ  (0x66FED0) 常量 1073711829 (0x3FFF8AD5)  <- NPC
-	// 083 中 sub_6D267D 用的是 0x3FFF8AD5，实测 patch 它会让 NPC 飞到最上层，
-	// 印证它就是 NPC 的。sub_92FD16 用 0x3FFF8ADA，即玩家版，且被
-	// CUser_DecodeSpawnPacket (SPAWN_PLAYER) 调用 —— 只影响玩家，不动 NPC。
-	//
-	// 【为什么不做无条件抬升】三次实测：
-	//   +33 层 (z+=0x100000) -> 压到 UI 之上
-	//   +2  层 (z+=60000)    -> bot 站到护栏外面
-	//   +1  层 (z+=30000)    -> 仍盖过护栏
-	// bot 的 m_lPage 停留在生成时的地面层，护栏可能只高 0~1 层，固定抬升必然越界。
-	//
-	// 【现在的做法】仅在 stance 为爬梯/绳索（14..17）时抬升，站立时保持原值。
-	// cave 内会先校验返回地址，只在 sub_92E499 这条路径（ecx 确为 CUser）读
-	// stance —— 另一条路径 sub_936EFF 传的是 this-4，直接读会越界闪退。
-	// 【停用 · 已定位真正根因，无需客户端 patch】
-	// bot 的 MOVE_PLAYER 包格式错误：缺少 CMovePath 头部的 4 字节（起始 x/y），
-	// 导致客户端把 y 的低字节当成 numCommands，后续 fh/stance 全部错位 —— 这才是
-	// 远程角色绘制层异常的原因（真人客户端包格式正确，所以正常）。
-	// 已在 solomapling-plugin 修正 sendMovementPacket / teleportPath 的包布局。
-	// 待验证服务端修复效果；若仍有问题再考虑重新启用。
-	// Memory::CodeCave(ccClimbLayerBoost, 0x0092FD46, 5);
-
 	if (talkRepeat)
 	{
 		Memory::WriteByte(0x004905ED + 1, 5);
