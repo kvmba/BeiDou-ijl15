@@ -1742,4 +1742,47 @@ __declspec(naked) void ccQuestBudget() {
 		jmp dword ptr [dwQuestBudgetEnd]
 	}
 }
-
+
+// ====== 远程玩家爬绳被绳索遮挡：仅爬梯/绳索时抬升绘制层 ======
+//
+// 【为什么不能无条件抬升】实测：
+//   +33 层 (z+=0x100000) -> 角色压到 UI 之上
+//   +2  层 (z+=60000)    -> bot 站到护栏外面
+//   +1  层 (z+=30000)    -> 仍然盖过护栏
+// 根因是 bot 的 m_lPage 停在生成时的地面层，而护栏可能只比它高 0~1 层，
+// 任何固定抬升都会越界。必须【只在爬绳时】抬升，站立时保持原值。
+//
+// 【patch 点】sub_92FD16 (68B) —— 玩家专用层计算（常量 0x3FFF8ADA；
+// NPC 用 0x3FFF8AD5 在 sub_6D267D，两者互不干扰）：
+//     92fd37 mov eax,[eax+18h]   m_bActive
+//     92fd3e and eax,5 / inc / inc   -> 基准层 7 或 2
+//     92fd42 lea edx,[edx+edx*4]     -> edx = 5*(3000*m_lPage - m_lZMass)
+//     92fd46 lea eax,[eax+edx*2-3FFF8ADAh]   <- 注入点（7 字节指令，覆盖前 5 字节）
+//     92fd4d push eax
+//     92fd4e add ecx,88h
+//     92fd54 call sub_452195  -> put_z
+// 本 cave 覆盖 92fd46 的前 5 字节，cave 内补全整条 lea 后跳回 92fd4d。
+//
+// 【判据】CUser+0x528 = stance（CUser_DecodeSpawnPacket 0x97F77A 引用 [edi+528h]）。
+//   爬梯/绳索 = 14..17（LADDER_RIGHT 14 / LADDER_LEFT 15 / ROPE_RIGHT 16 / ROPE_LEFT 17）
+//   见 org.gms.constants.game.CharacterStance。
+//   站立/行走/跳跃等其它姿态一律不抬升，护栏不受影响。
+//
+// 入口：eax = 基准层(7/2)，edx = 5*(3000*m_lPage - m_lZMass)，ecx = CUser。
+DWORD dwClimbLayerBoostRetn = 0x0092FD4D;   // 跳回：push eax
+DWORD dwClimbLayerBoostAmount = 30000;      // 爬绳时 z 抬升量（1 层单位）
+__declspec(naked) void ccClimbLayerBoost() {
+	__asm {
+		push ebx
+		mov ebx, dword ptr [ecx + 528h]        // stance
+		cmp ebx, 14                             // LADDER_RIGHT
+		jb short _notclimbing
+		cmp ebx, 17                             // ROPE_LEFT
+		ja short _notclimbing
+		add eax, dword ptr [dwClimbLayerBoostAmount]
+	_notclimbing:
+		pop ebx
+		lea eax, [eax + edx * 2 - 3FFF8ADAh]    // 补全被覆盖的原指令
+		jmp dword ptr [dwClimbLayerBoostRetn]
+	}
+}
