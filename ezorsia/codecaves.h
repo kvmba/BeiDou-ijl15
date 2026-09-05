@@ -1743,39 +1743,49 @@ __declspec(naked) void ccQuestBudget() {
 	}
 }
 
-// ====== 远程玩家爬绳时被绳索遮挡：层字段 fallback 抬升 ======
-// 根因：CUser::ApplyMove (sub_9B7C09) 有两层平台判定：
-//   ① CUser_ApplyMovement_SetFoothold —— 按 fh 字段解析（地面 ID / 绳索索引）
-//   ② sub_A45585(角色x, 角色y)        —— 坐标兜底，重新查平台并覆盖层字段
-// 爬绳时角色悬空，② 查不到平台（eax==0），走 jz 直接跳过层更新，
-// 于是层字段 CUser+0x130 / +0x134 滞留旧值，绘制层偏低 → 被绳索盖住。
-// 绘制侧无法唯一定位（sub_48BBCA / sub_97BD9A / sub_6D267D 均非玩家层，
-// 其中 sub_6D267D 实测是 NPC 层），改为在层字段【写入侧】兜底抬升，
-// 这样任何读取 0x130/0x134 的绘制函数都会生效。
+// ====== 远程玩家被绳索遮挡：抬升层字段（层写入侧，远程玩家专用） ======
 //
-// hook 0x9B7C61 (5B): 85 C0 (test eax,eax) 74 30 (jz loc_9B7C95) 8B (mov edx,.. 首字节)
-//   被覆盖的 5 字节里含 mov edx,[eax+1Ch] 的首字节 8B，cave 内必须补全整条指令，
-//   且只能跳回覆盖区之外（0x9B7C68 / 0x9B7C95），否则会执行残留位移字节。
-// 入口时：eax = sub_A45585 结果（0 = 悬空/爬绳），esi = CUser 对象。
-DWORD dwCharLayerFallbackRetn = 0x009B7C68; // 正常路径：cmp [esi+130h], edx
-DWORD dwCharLayerFallbackSkip = 0x009B7C95; // 原 jz 目标：跳过层更新
-__declspec(naked) void ccCharLayerFallback() {
+// 【根因 · 已用 xref 证实】
+//   MOVE_PLAYER 包里的 fh 字段，客户端解码后【从未使用】：
+//     CMovePath::Decode (sub_68A33C) 把 fh 存到 CMovePath+0x2C，
+//     其唯一调用者是 sub_68B371（远程玩家移动处理），而 sub_68B371 完全不读 +0x2C，
+//     也不调用任何 FootholdTree_* / SetFoothold / SetLadderRopeBinding。
+//   => 改服务端 movePlayer 的 fh 编码对客户端毫无影响（此前 3 次服务端修复无效的原因）。
+//
+//   远程玩家的绘制层【只在 SPAWN_PLAYER 时设置一次】，之后不再更新：
+//     CUser_DecodeSpawnPacket (0x97F6E0) 读 fh -> FootholdTree_LookupFootholdById
+//       -> sub_9B1288(obj, fh) 写入 obj+5 (fh)
+//       -> sub_9B12A8 读 obj+5，设置层字段 this+0x130 / +0x134
+//   且该路径只有地面分支，没有 FindLadderOrRope 绳索分支。
+//   => bot 爬绳时层停留在生成时的地面层，低于绳索层，于是被遮住。
+//
+// 【patch 点】sub_9B12A8 @0x9B1373，它把 fh 的层值写入 CUser+0x130/+0x134：
+//     9b1373  cmp [ebx+110h], ecx
+//     9b137f  jz  short loc_9B13B1        ; fh==0 -> 默认层
+//     9b1381  mov eax, [edi+1Ch]          ; fh 有效 -> layer = *(fh+28)
+//     9b1384  mov [ebx+130h], eax
+//     9b1395  mov [ebx+134h], eax
+//   在原语义基础上给 layer76 加一个偏移，使其压过绳索所在层。
+//   层公式 z = 10*(3000*layer76 - layer77) - 1073711828，每层单位 = 30000。
+//
+// 覆盖 0x9B1373 起 14 字节（cmp 6B + mov 6B + jz 2B），cave 内补齐这三条后分流。
+// 入口：ebx = 角色对象，edi = fh 对象，ecx = 0。
+DWORD dwCharLayerBoostRetnValid = 0x009B138D; // fh 有效路径：push edi
+DWORD dwCharLayerBoostRetnNoFh = 0x009B13B1;  // fh 为空路径：原 jz 目标
+DWORD dwCharLayerBoostAmount = 0x14;          // layer76 += 20 (z += 600000)
+__declspec(naked) void ccCharLayerBoost() {
 	__asm {
-		test eax, eax
-		jz short _airborne
-		// 兜底命中：补全被吃掉首字节的 mov edx,[eax+1Ch]，回到正常路径
-		mov edx, dword ptr [eax + 1Ch]
-		jmp dword ptr [dwCharLayerFallbackRetn]
-	_airborne:
-		// 悬空（爬绳/空中）：把 layer76 抬到固定高值，使绘制层压过绳索。
-		// z = 10*(3000*layer76 - layer77) - 1073711828，每层单位 = 30000。
-		// 用【比较后赋值】而非 add：本分支每帧都会进来，累加会迅速溢出。
-		// 只在当前值低于阈值时抬升，已抬升则保持，保证幂等。
-		// 必须跳 dwCharLayerFallbackSkip：Retn 处会把层字段覆盖回平台值。
-		cmp dword ptr [esi + 130h], 0x10000
-		jae short _keep
-		mov dword ptr [esi + 130h], 0x10000
-	_keep:
-		jmp dword ptr [dwCharLayerFallbackSkip]
+		cmp dword ptr [ebx + 110h], ecx
+		mov dword ptr [ebx + 118h], ecx
+		jz short _nofh
+		// fh 有效：layer76 = *(fh+28) + boost，layer77 = *(fh+32)
+		mov eax, dword ptr [edi + 1Ch]
+		add eax, dword ptr [dwCharLayerBoostAmount]
+		mov dword ptr [ebx + 130h], eax
+		mov eax, dword ptr [edi + 20h]
+		mov dword ptr [ebx + 134h], eax
+		jmp dword ptr [dwCharLayerBoostRetnValid]
+	_nofh:
+		jmp dword ptr [dwCharLayerBoostRetnNoFh]
 	}
 }

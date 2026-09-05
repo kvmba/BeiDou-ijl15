@@ -934,12 +934,12 @@ void Client::MoreHook() {
 	Memory::CodeCave(ccQuestBudget, 0x00A1F93F, 13); // Quest遍历循环注入30ms预算（防557ms卡顿）
 	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
-	// 远程玩家爬绳时被绳索遮挡 —— 层字段 fallback 抬升。
-	// 在 CUser::ApplyMove (sub_9B7C09 @0x9B7C61) 的坐标兜底失败分支注入：
-	// 爬绳悬空时 sub_A45585 返回 0，原逻辑直接跳过层更新，导致 CUser+0x130
-	// 滞留低值。cave 内将其抬到固定高值（幂等，不累加）。详见 codecaves.h。
-	// 注意：绘制函数本地/远程共用，此改动对自己的角色同样生效。
-	Memory::CodeCave(ccCharLayerFallback, 0x009B7C61, 5);
+	// 远程玩家被绳索遮挡 —— 抬升层字段。
+	// 在 sub_9B12A8 (@0x9B1373) 注入：该函数把 fh 的层值写入 CUser+0x130/+0x134，
+	// 是远程玩家绘制层的唯一设置点（MOVE_PLAYER 的 fh 客户端根本不用）。
+	// 抬升量为 dwCharLayerBoostAmount（默认 +20 层单位）。详见 codecaves.h。
+	// 注意：本地玩家层由 CUser_ApplyMovement_SetFoothold (0x9B187F) 设置，不受影响。
+	Memory::CodeCave(ccCharLayerBoost, 0x009B1373, 14);
 
 	if (talkRepeat)
 	{
