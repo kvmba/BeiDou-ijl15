@@ -949,7 +949,16 @@ void Client::MoreHook() {
 	// CUser_DecodeSpawnPacket (SPAWN_PLAYER) 调用 —— 只影响玩家，不动 NPC。
 	//
 	// 只需改一个 4 字节立即数，无需 codecave。
-	Memory::WriteInt(0x0092FD49, 0xC0107526); // 原值 0xC0007526，z + 0x100000
+	//
+	// 【抬升量依据 · 实测扫描 WZ】
+	// 遍历 gms-server/wz/Map.wz 全部 3097 个含 ladderRope 的地图，绳索 page 分布：
+	//     page=0:5  1:17  2:52  3:40  4:151  5:90  6:149  7:45
+	//   => 最大值 7，范围 0..7。
+	// 玩家基准层是 7（m_bActive 时；否则 2），正好与最高绳索同层，同层时绘制
+	// 顺序取决于入层先后，bot 后加入就被排在绳索后面 —— 这就是"部分绳索被遮"。
+	// 因此只需越过 7 即可：抬 2 个层单位（z += 60000）足够覆盖全部情况，
+	// 远小于此前 +0x100000（约 33 层）导致角色压到 UI 之上的问题。
+	Memory::WriteInt(0x0092FD49, 0xC0015F86); // 原值 0xC0007526，z + 60000 (2 层单位)
 
 	if (talkRepeat)
 	{
