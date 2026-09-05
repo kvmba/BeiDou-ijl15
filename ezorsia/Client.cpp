@@ -934,12 +934,22 @@ void Client::MoreHook() {
 	Memory::CodeCave(ccQuestBudget, 0x00A1F93F, 13); // Quest遍历循环注入30ms预算（防557ms卡顿）
 	Memory::PatchNop(0x009F8B4B, 5); // 移除每帧定时GC（由地图切换GC替代，消除周期性卡顿）
 
-	// 远程玩家被绳索遮挡 —— 抬升层字段。
-	// 在 sub_9B12A8 (@0x9B1373) 注入：该函数把 fh 的层值写入 CUser+0x130/+0x134，
-	// 是远程玩家绘制层的唯一设置点（MOVE_PLAYER 的 fh 客户端根本不用）。
-	// 抬升量为 dwCharLayerBoostAmount（默认 +20 层单位）。详见 codecaves.h。
-	// 注意：本地玩家层由 CUser_ApplyMovement_SetFoothold (0x9B187F) 设置，不受影响。
-	Memory::CodeCave(ccCharLayerBoost, 0x009B1373, 14);
+	// 远程玩家被绳索遮挡 —— 抬升绘制层 z 值（玩家专用点）。
+	//
+	// sub_92FD16 (68 字节) 计算玩家的绘制层 z，然后交给 sub_452195 -> put_z 应用：
+	//     z = (m_bActive ? 7 : 2) + 10*(3000*m_lPage - m_lZMass) - 1073711834
+	//   汇编: 92fd3e and eax,5 / 92fd41 inc / 92fd45 inc  -> 基准 7 或 2
+	//         92fd46 lea eax,[eax+edx*2-3FFF8ADAh]        <- 立即数在 +3
+	//
+	// 【为什么这里才是玩家专用】借助有符号的 095 客户端比对确认：
+	//   CUser::SetLayerZ (0x8DFC10) 常量 1073711834 (0x3FFF8ADA)  <- 玩家
+	//   CNpc::SetLayerZ  (0x66FED0) 常量 1073711829 (0x3FFF8AD5)  <- NPC
+	// 083 中 sub_6D267D 用的是 0x3FFF8AD5，实测 patch 它会让 NPC 飞到最上层，
+	// 印证它就是 NPC 的。sub_92FD16 用 0x3FFF8ADA，即玩家版，且被
+	// CUser_DecodeSpawnPacket (SPAWN_PLAYER) 调用 —— 只影响玩家，不动 NPC。
+	//
+	// 只需改一个 4 字节立即数，无需 codecave。
+	Memory::WriteInt(0x0092FD49, 0xC0107526); // 原值 0xC0007526，z + 0x100000
 
 	if (talkRepeat)
 	{
