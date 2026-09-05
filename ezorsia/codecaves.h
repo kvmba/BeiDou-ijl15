@@ -1770,7 +1770,16 @@ __declspec(naked) void ccQuestBudget() {
 //
 // 入口：eax = 基准层(7/2)，edx = 5*(3000*m_lPage - m_lZMass)，ecx = CUser。
 DWORD dwClimbLayerBoostRetn = 0x0092FD4D;   // 跳回：push eax
-DWORD dwClimbLayerBoostAmount = 30000;      // 爬绳时 z 抬升量（1 层单位）
+// 爬绳时的抬升量。
+//
+// WZ 的 foothold 节点【没有 page 字段】（只有 x1/y1/x2/y2/prev/next），地面层是
+// 客户端运行时推导的，无法静态算出 bot 的 m_lPage，因此按最坏情况覆盖：
+//   绳索 nPage 实测最大 7（全程 3097 张含 ladderRope 的地图扫描结果）
+//   bot z = 基准(7) + 30000*m_lPage + boost
+//   m_lPage 最低取 0 -> 需 boost ≈ 7 层单位才能压过 nPage=7 的绳索
+// 故取 7 层单位 = 210000。本值只在爬梯/绳索姿态下生效，站立时不施加；
+// 若实测爬绳时盖住了旁边的物件，往下调（5 层=150000 / 4 层=120000）。
+DWORD dwClimbLayerBoostAmount = 210000;     // 爬绳时 z 抬升量（7 层单位）
 // 仅当返回地址落在 sub_92E499 内才认为 ecx 是 CUser（见下方说明）
 DWORD dwClimbCallerLo = 0x0092E499;
 DWORD dwClimbCallerHi = 0x0092E916;
