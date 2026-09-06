@@ -31,6 +31,7 @@ std::string Client::ServerIP_AddressFromINI = "127.0.0.1"; // 服务器IP地址
 int Client::serverIP_Port = 8484; // 服务器端口
 bool Client::talkRepeat = false; // 重复说话
 int Client::talkTime = 2000; // 说话间隔时间
+int Client::quickSlotYOffset = 0; // 长键盘Y轴整体偏移(像素)，正数向下，由config.ini决定
 
 void Client::UpdateGameStartup() {
 	//Memory::CodeCave(cc0x0044E550, dw0x0044E550, dw0x0044E550Nops); //run from packed client //skip //sub_44E546
@@ -180,6 +181,16 @@ void Client::UpdateGameStartup() {
 void Client::UpdateResolution() {
 	nStatusBarY = Client::m_nGameHeight - 578;
 
+	// 长键盘(26格)整体Y轴偏移：每格的绘制坐标来自 Array_ptShortKeyPos，
+	// 命中判定坐标来自 Array_ptShortKeyPos_Fixed_Tooltips，两者步长均为 8 字节、y 在 +4。
+	// 这里在初始化时统一把 y 加上偏移量，正数向下。
+	if (quickSlotYOffset != 0) {
+		for (int i = 0; i < 26; i++) {
+			*(int*)(Array_ptShortKeyPos + i * 8 + 4) += quickSlotYOffset;
+			*(int*)(Array_ptShortKeyPos_Fixed_Tooltips + i * 8 + 4) += quickSlotYOffset;
+		}
+	}
+
 	Memory::CodeCave(AdjustStatusBar, dwStatusBarVPos, 5);
 	Memory::CodeCave(AdjustStatusBarBG, dwStatusBarBackgroundVPos, 5);
 	Memory::CodeCave(AdjustStatusBarInput, dwStatusBarInputVPos, 9);
@@ -209,11 +220,11 @@ void Client::UpdateResolution() {
 	Memory::WriteInt(dwTempStatCoolTimeVPos + 2, (m_nGameHeight / 2) - 23);	//sub ebx,277 ; Skill icon cooltime y-pos
 	Memory::WriteInt(dwTempStatCoolTimeHPos + 3, (m_nGameWidth / 2) - 3);	//lea eax,[eax+esi+397] ; Skill icon cooltime x-pos
 
-	Memory::WriteInt(dwQuickSlotInitVPos + 1, m_nGameHeight + 7);//add eax,533 //长键盘Y轴整体下移6像素
+	Memory::WriteInt(dwQuickSlotInitVPos + 1, m_nGameHeight + 1);//add eax,533
 	Memory::WriteInt(dwQuickSlotInitHPos + 1, 815); //push 647 //hd800
-	Memory::WriteInt(dwQuickSlotVPos + 2, m_nGameHeight + 7);//add esi,533 //长键盘Y轴整体下移6像素
+	Memory::WriteInt(dwQuickSlotVPos + 2, m_nGameHeight + 1);//add esi,533
 	Memory::WriteInt(dwQuickSlotHPos + 1, 815); //push 647 //hd800
-	Memory::WriteInt(dwQuickSlotCWndVPos + 2, (600 - m_nGameHeight) / 2 - 427 - 26); //lea edi,[eax-427] //长键盘Y轴下移6像素，命中判定同步补偿-6
+	Memory::WriteInt(dwQuickSlotCWndVPos + 2, (600 - m_nGameHeight) / 2 - 427 - 20); //lea edi,[eax-427]
 	Memory::WriteInt(dwQuickSlotCWndHPos + 2, -815); //lea ebx,[eax-647]
 
 	//Memory::WriteInt(dwByteAvatarMegaHPos + 1, m_nGameWidth + 100); //push 800 ; CAvatarMegaphone::ByeAvatarMegaphone ; IWzVector2D::RelMove ##BAK

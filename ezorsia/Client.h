@@ -45,4 +45,6 @@ public:
 	static int serverIP_Port;
 	static bool talkRepeat;
 	static int talkTime;
+	// 长键盘整体Y轴偏移(像素)，正数向下
+	static int quickSlotYOffset;
 };
