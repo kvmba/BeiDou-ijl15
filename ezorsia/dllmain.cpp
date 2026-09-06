@@ -149,9 +149,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 		std::cout << "NMCO hook initialized" << std::endl;
 		break;
 	}
+	// 注意：不要在 DLL_PROCESS_DETACH 里调用 ExitProcess。
+	// DllMain 在加载器锁(Loader Lock)内执行，此时调用 ExitProcess 会触发
+	// 完整的进程拆除流程，属于未定义行为，会导致退出时闪屏/卡死。
+	// 进程本来就要退出，让它正常拆除即可。
 	default: break;
-	case DLL_PROCESS_DETACH:
-		ExitProcess(0);
 	}
 	return TRUE;
 }
