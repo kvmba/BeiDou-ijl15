@@ -220,10 +220,12 @@ void Client::UpdateResolution() {
 	Memory::WriteInt(dwTempStatCoolTimeVPos + 2, (m_nGameHeight / 2) - 23);	//sub ebx,277 ; Skill icon cooltime y-pos
 	Memory::WriteInt(dwTempStatCoolTimeHPos + 3, (m_nGameWidth / 2) - 3);	//lea eax,[eax+esi+397] ; Skill icon cooltime x-pos
 
-	Memory::WriteInt(dwQuickSlotInitVPos + 1, m_nGameHeight + 1);//add eax,533
+	// quickslot 底框/背景的垂直位置：与键位坐标数组是两套绘制，需同样加上偏移量
+	Memory::WriteInt(dwQuickSlotInitVPos + 1, m_nGameHeight + 1 + quickSlotYOffset);//add eax,533
 	Memory::WriteInt(dwQuickSlotInitHPos + 1, 815); //push 647 //hd800
-	Memory::WriteInt(dwQuickSlotVPos + 2, m_nGameHeight + 1);//add esi,533
+	Memory::WriteInt(dwQuickSlotVPos + 2, m_nGameHeight + 1 + quickSlotYOffset);//add esi,533
 	Memory::WriteInt(dwQuickSlotHPos + 1, 815); //push 647 //hd800
+	// 注：dwQuickSlotCWndVPos 不偏移——按键命中判定已随 _Fixed_Tooltips 数组同步，再加会双重偏移
 	Memory::WriteInt(dwQuickSlotCWndVPos + 2, (600 - m_nGameHeight) / 2 - 427 - 20); //lea edi,[eax-427]
 	Memory::WriteInt(dwQuickSlotCWndHPos + 2, -815); //lea ebx,[eax-647]
 
