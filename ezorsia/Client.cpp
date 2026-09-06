@@ -209,11 +209,11 @@ void Client::UpdateResolution() {
 	Memory::WriteInt(dwTempStatCoolTimeVPos + 2, (m_nGameHeight / 2) - 23);	//sub ebx,277 ; Skill icon cooltime y-pos
 	Memory::WriteInt(dwTempStatCoolTimeHPos + 3, (m_nGameWidth / 2) - 3);	//lea eax,[eax+esi+397] ; Skill icon cooltime x-pos
 
-	Memory::WriteInt(dwQuickSlotInitVPos + 1, m_nGameHeight + 3);//add eax,533 //长键盘Y轴整体下移2像素
+	Memory::WriteInt(dwQuickSlotInitVPos + 1, m_nGameHeight + 7);//add eax,533 //长键盘Y轴整体下移6像素
 	Memory::WriteInt(dwQuickSlotInitHPos + 1, 815); //push 647 //hd800
-	Memory::WriteInt(dwQuickSlotVPos + 2, m_nGameHeight + 3);//add esi,533 //长键盘Y轴整体下移2像素
+	Memory::WriteInt(dwQuickSlotVPos + 2, m_nGameHeight + 7);//add esi,533 //长键盘Y轴整体下移6像素
 	Memory::WriteInt(dwQuickSlotHPos + 1, 815); //push 647 //hd800
-	Memory::WriteInt(dwQuickSlotCWndVPos + 2, (600 - m_nGameHeight) / 2 - 427 - 22); //lea edi,[eax-427] //长键盘Y轴下移2像素，命中判定同步补偿-2
+	Memory::WriteInt(dwQuickSlotCWndVPos + 2, (600 - m_nGameHeight) / 2 - 427 - 26); //lea edi,[eax-427] //长键盘Y轴下移6像素，命中判定同步补偿-6
 	Memory::WriteInt(dwQuickSlotCWndHPos + 2, -815); //lea ebx,[eax-647]
 
 	//Memory::WriteInt(dwByteAvatarMegaHPos + 1, m_nGameWidth + 100); //push 800 ; CAvatarMegaphone::ByeAvatarMegaphone ; IWzVector2D::RelMove ##BAK
