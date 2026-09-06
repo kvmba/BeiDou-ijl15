@@ -181,16 +181,6 @@ void Client::UpdateGameStartup() {
 void Client::UpdateResolution() {
 	nStatusBarY = Client::m_nGameHeight - 578;
 
-	// 长键盘(26格)整体Y轴偏移：每格的绘制坐标来自 Array_ptShortKeyPos，
-	// 命中判定坐标来自 Array_ptShortKeyPos_Fixed_Tooltips，两者步长均为 8 字节、y 在 +4。
-	// 这里在初始化时统一把 y 加上偏移量，正数向下。
-	if (quickSlotYOffset != 0) {
-		for (int i = 0; i < 26; i++) {
-			*(int*)(Array_ptShortKeyPos + i * 8 + 4) += quickSlotYOffset;
-			*(int*)(Array_ptShortKeyPos_Fixed_Tooltips + i * 8 + 4) += quickSlotYOffset;
-		}
-	}
-
 	Memory::CodeCave(AdjustStatusBar, dwStatusBarVPos, 5);
 	Memory::CodeCave(AdjustStatusBarBG, dwStatusBarBackgroundVPos, 5);
 	Memory::CodeCave(AdjustStatusBarInput, dwStatusBarInputVPos, 9);
@@ -220,12 +210,13 @@ void Client::UpdateResolution() {
 	Memory::WriteInt(dwTempStatCoolTimeVPos + 2, (m_nGameHeight / 2) - 23);	//sub ebx,277 ; Skill icon cooltime y-pos
 	Memory::WriteInt(dwTempStatCoolTimeHPos + 3, (m_nGameWidth / 2) - 3);	//lea eax,[eax+esi+397] ; Skill icon cooltime x-pos
 
-	// quickslot 底框/背景的垂直位置：与键位坐标数组是两套绘制，需同样加上偏移量
+	// 长键盘整体Y轴偏移：键位坐标(Array_ptShortKeyPos)是相对底框的，
+	// 底框移动时按键自动跟随，因此只需偏移底框，不要再改键位数组(否则加倍)。
 	Memory::WriteInt(dwQuickSlotInitVPos + 1, m_nGameHeight + 1 + quickSlotYOffset);//add eax,533
 	Memory::WriteInt(dwQuickSlotInitHPos + 1, 815); //push 647 //hd800
 	Memory::WriteInt(dwQuickSlotVPos + 2, m_nGameHeight + 1 + quickSlotYOffset);//add esi,533
 	Memory::WriteInt(dwQuickSlotHPos + 1, 815); //push 647 //hd800
-	// 注：dwQuickSlotCWndVPos 不偏移——按键命中判定已随 _Fixed_Tooltips 数组同步，再加会双重偏移
+	// 命中判定基准同样随底框走，不额外偏移
 	Memory::WriteInt(dwQuickSlotCWndVPos + 2, (600 - m_nGameHeight) / 2 - 427 - 20); //lea edi,[eax-427]
 	Memory::WriteInt(dwQuickSlotCWndHPos + 2, -815); //lea ebx,[eax-647]
 
