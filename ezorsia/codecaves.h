@@ -1454,7 +1454,7 @@ __declspec(naked) void chatTextPos()
 		cmp[edi + 0D00h], 2
 		jz label_type2
 
-		label_type1 :        // ״̬1 ����
+		                // ״̬1 ����
 		sub eax, 1
 		jmp label_rtn
 
