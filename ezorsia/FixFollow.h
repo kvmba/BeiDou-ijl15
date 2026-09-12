@@ -1,6 +1,8 @@
 #pragma once
 #include <imm.h>
 #pragma comment(lib, "imm32.lib")
+#include <cstdio>
+#include <cstdarg>
 #include "Client.h"
 
 // IME candidate window follow fix (GMS083 BeiDou client).
@@ -42,6 +44,20 @@
 #define IME_FOLLOW_LINE_OFFSET 20
 
 static bool g_imeForceBusy = false;
+
+static void ImeFollowLog(const char* fmt, ...)
+{
+	if (!Client::debug)
+		return;
+	FILE* f = nullptr;
+	if (fopen_s(&f, "imefollow.log", "a") != 0 || f == nullptr)
+		return;
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf(f, fmt, ap);
+	va_end(ap);
+	fclose(f);
+}
 
 // Computes the caret anchor of the focused edit control.
 //   *pSx/*pSy : caret point in SCREEN pixels
@@ -87,6 +103,18 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	*pSx = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
 	*pSy = ptOrg.y + (int)((nAbsTop + IME_FOLLOW_LINE_OFFSET) * dScaleY + 0.5);
 	*pLineH = (int)(nFontHeight * dScaleY + 0.5);
+	{
+		DWORD ctrl = focus - 4;
+		int cx = *(int*)(ctrl + 0x58);
+		int vx = *(int*)(ctrl + 0x60);
+		RECT wrc = { 0,0,0,0 }, crc = { 0,0,0,0 };
+		GetWindowRect(hWnd, &wrc);
+		GetClientRect(hWnd, &crc);
+		ImeFollowLog("LOG absL=%d absT=%d fontH=%d caretX=%d viewX=%d | win=(%d,%d,%d,%d) client=(%d,%d) | scale=(%.3f,%.3f) -> sx=%d sy=%d lh=%d\n",
+			nAbsLeft, nAbsTop, nFontHeight, cx, vx,
+			wrc.left, wrc.top, wrc.right, wrc.bottom, crc.right, crc.bottom,
+			dScaleX, dScaleY, *pSx, *pSy, *pLineH);
+	}
 	return true;
 }
 
