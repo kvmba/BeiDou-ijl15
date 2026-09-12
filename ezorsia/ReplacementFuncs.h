@@ -122,6 +122,11 @@ static void ApplyAspectLock(HWND hwnd, RECT* rc, int edge) {
 // Subclassed WndProc for the main window.
 static LRESULT CALLBACK WindowScaleProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	switch (msg) {
+	case WM_IME_STARTCOMPOSITION: case WM_IME_ENDCOMPOSITION:
+	case WM_IME_COMPOSITION: case WM_IME_NOTIFY: case WM_IME_SETCONTEXT:
+	case WM_IME_SELECT: case WM_IME_CONTROL:
+		ImeFollowTraceMsg(msg, (unsigned int)wParam);
+		break;
 	case WM_GETMINMAXINFO: {
 		// Only allow enlarging: the minimum window size keeps the render resolution.
 		MINMAXINFO* mmi = (MINMAXINFO*)lParam;
@@ -175,6 +180,7 @@ static LRESULT CALLBACK WindowScaleProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 	case WM_NCHITTEST:
 		return DefWindowProcA(hwnd, WM_NCHITTEST, wParam, lParam);
 	case WM_IME_REQUEST: {
+		ImeFollowTraceMsg(msg, (unsigned int)wParam);
 		// modern (Win8+) IMEs ask the focused window for the caret position via
 		// IMR_QUERYCHARPOSITION; the game never answers, so its UI falls back to
 		// the default spot near the taskbar. Answer from the focused edit box.

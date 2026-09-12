@@ -178,3 +178,11 @@ static bool ImeFollowQueryCharPosition(LPARAM lParam)
 	}
 	return true;
 }
+
+// Diagnostic: log IME messages actually delivered to the window.
+static void ImeFollowTraceMsg(unsigned int msg, unsigned int wParam)
+{
+	if (!Client::debug)
+		return;
+	ImeFollowLog("MSG id=0x%03X wParam=0x%X\n", msg, wParam);
+}
