@@ -1,8 +1,6 @@
 #pragma once
 #include <imm.h>
 #pragma comment(lib, "imm32.lib")
-#include <cstdio>
-#include <cstdarg>
 #include "Client.h"
 
 // IME candidate window follow fix (GMS083 BeiDou client).
@@ -35,7 +33,6 @@
 
 // CCtrlEdit/CCtrlMLEdit: line height (m_nFontHeight).
 #define IME_CTRL_FONT_HEIGHT   0x7Cu
-#define IME_CTRL_CARET_X       0x58u    // m_nCaretX (render px)
 
 // IUIMsgHandler vtable slots on the focused control.
 #define IME_IUIMSG_GETABSLEFT  0x2Cu    // GetAbsLeft()
@@ -45,20 +42,6 @@
 #define IME_FOLLOW_LINE_OFFSET 20
 
 static bool g_imeForceBusy = false;
-
-static void ImeFollowLog(const char* fmt, ...)
-{
-	if (!Client::debug)
-		return;
-	FILE* f = nullptr;
-	if (fopen_s(&f, "imefollow.log", "a") != 0 || f == nullptr)
-		return;
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(f, fmt, ap);
-	va_end(ap);
-	fclose(f);
-}
 
 // Computes the caret anchor of the focused edit control.
 //   *pSx/*pSy : caret point in SCREEN pixels
@@ -77,7 +60,6 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	DWORD vft = *(DWORD*)focus;
 	if (vft == 0)
 		return false;
-	DWORD ctrl = focus - 4;   // control base
 
 	// GetAbsLeft/GetAbsTop return the control position in render space;
 	// map render -> client pixels -> screen (current client size keeps
@@ -85,8 +67,6 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	int nAbsLeft   = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
 	int nAbsTop    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
 	int nFontHeight = *(int*)(focus + IME_CTRL_FONT_HEIGHT);
-	int nCaretX     = *(int*)(ctrl + IME_CTRL_CARET_X);
-	nAbsLeft += nCaretX;   // follow the insertion point
 	POINT ptOrg = { 0, 0 };
 	ClientToScreen(hWnd, &ptOrg);
 	double dScaleX = 1.0, dScaleY = 1.0;
@@ -107,8 +87,6 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	*pSx = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
 	*pSy = ptOrg.y + (int)((nAbsTop + IME_FOLLOW_LINE_OFFSET) * dScaleY + 0.5);
 	*pLineH = (int)(nFontHeight * dScaleY + 0.5);
-	ImeFollowLog("v8b absL=%d absT=%d caretX=%d fontH=%d org=(%d,%d) scale=(%.3f,%.3f) sx=%d sy=%d lh=%d\n",
-		nAbsLeft - nCaretX, nAbsTop, nCaretX, nFontHeight, ptOrg.x, ptOrg.y, dScaleX, dScaleY, *pSx, *pSy, *pLineH);
 	return true;
 }
 
