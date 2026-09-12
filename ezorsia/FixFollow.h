@@ -51,8 +51,8 @@ static void ImeFollowLog(const char* fmt, ...)
 {
 	if (!Client::debug)
 		return;
-	FILE* f = fopen("imefollow.log", "a");
-	if (!f)
+	FILE* f = nullptr;
+	if (fopen_s(&f, "imefollow.log", "a") != 0 || f == nullptr)
 		return;
 	va_list ap;
 	va_start(ap, fmt);
