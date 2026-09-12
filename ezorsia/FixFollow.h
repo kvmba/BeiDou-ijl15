@@ -162,12 +162,6 @@ static bool ImeFollowForceWindows(bool bSetComposition)
 	ImmReleaseContext(hWnd, hImc);
 	g_imeForceBusy = false;
 
-	if (Client::debug) {
-		char buf[128];
-		wsprintfA(buf, "[imeFollow] comp=(%d,%d)c cand=(%d,%d)s line=%d\n",
-			ptClient.x, ptClient.y, sx, sy, lineH);
-		OutputDebugStringA(buf);
-	}
 	return true;
 }
 
