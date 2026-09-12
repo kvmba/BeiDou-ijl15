@@ -212,11 +212,14 @@ static LRESULT CALLBACK WindowScaleProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 	}
 	LRESULT lr = CallWindowProcA(g_origMainWndProc, hwnd, msg, wParam, lParam);
 	// The game pushes the IMM windows off-screen (or never sets them); after
-	// it handles each composition update, force them onto the caret using
-	// CFS_FORCE_POSITION (screen coords). WM_IME_NOTIFY is not handled:
-	// moving the candidate emits IMN_SETCANDIDATEPOS, which would recurse.
+	// it handles each IME message, force them onto the caret: composition
+	// window in client coords (CFS_POINT), candidate window in screen coords.
+	// IMN_OPENCANDIDATE is the best moment to (re)assert the candidate,
+	// and is safe: our move emits IMN_SETCANDIDATEPOS (0x9), not 0x5.
 	if (msg == WM_IME_STARTCOMPOSITION || msg == WM_IME_COMPOSITION)
 		ImeFollowForceWindows();
+	else if (msg == WM_IME_NOTIFY && wParam == IMN_OPENCANDIDATE)
+		ImeFollowOnOpenCandidate();
 	return lr;
 }
 

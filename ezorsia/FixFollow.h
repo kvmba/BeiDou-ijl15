@@ -107,7 +107,7 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	*pSx = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
 	*pSy = ptOrg.y + (int)((nAbsTop + nFontHeight + 1) * dScaleY + 0.5);
 	*pLineH = (int)(nFontHeight * dScaleY + 0.5);
-	ImeFollowLog("v9 caretX=%d absT=%d fontH=%d org=(%d,%d) scale=(%.3f,%.3f) -> sx=%d sy=%d lh=%d\n",
+	ImeFollowLog("v11 caretX=%d absT=%d fontH=%d org=(%d,%d) scale=(%.3f,%.3f) -> sx=%d sy=%d lh=%d\n",
 		nCaretX, nAbsTop, nFontHeight, ptOrg.x, ptOrg.y, dScaleX, dScaleY, *pSx, *pSy, *pLineH);
 	return true;
 }
@@ -149,6 +149,16 @@ static bool ImeFollowForceWindows()
 	ImmReleaseContext(hWnd, hImc);
 	g_imeForceBusy = false;
 	return true;
+}
+
+// Called on WM_IME_NOTIFY / IMN_OPENCANDIDATE: the IME is about to show its
+// candidate window, so (re)assert its position now -- the most reliable
+// point (some IMEs read the position only when opening the candidate).
+static void ImeFollowOnOpenCandidate()
+{
+	if (g_imeForceBusy)
+		return;
+	ImeFollowForceWindows();
 }
 
 // Answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION (screen coordinates).
