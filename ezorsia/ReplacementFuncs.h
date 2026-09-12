@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <cstring>
 #include <mutex>
+#include "FixFollow.h"
 
 static bool ownLoginFrame;
 static bool ownCashShopFrame;
@@ -173,6 +174,14 @@ static LRESULT CALLBACK WindowScaleProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 	}
 	case WM_NCHITTEST:
 		return DefWindowProcA(hwnd, WM_NCHITTEST, wParam, lParam);
+	case WM_IME_REQUEST: {
+		// modern (Win8+) IMEs ask the focused window for the caret position via
+		// IMR_QUERYCHARPOSITION; the game never answers, so its UI falls back to
+		// the default spot near the taskbar. Answer from the focused edit box.
+		if (wParam == IMR_QUERYCHARPOSITION && ImeFollowQueryCharPosition(lParam))
+			return TRUE;
+		break; // not ours -> pass through to the game's window procedure
+	}
 	case WM_SETCURSOR: {
 		UINT hit = LOWORD(lParam);
 		if (hit == HTCLIENT) {

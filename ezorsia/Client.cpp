@@ -2,7 +2,6 @@
 #include "AddyLocations.h"
 #include "codecaves.h"
 #include "FixIme.h"
-#include "FixFollow.h"
 #include "FixBuddy.h"
 
 #include "MapleClientCollectionTypes/ZXString.h"
@@ -767,10 +766,6 @@ void Client::Chinese() {
 	}
 	else {
 		FixIme::HookNew();
-	}
-
-	if (Client::imeFollow) {
-		FixFollow::Hook();
 	}
 
 	FixBuddy::Hook();
