@@ -57,14 +57,27 @@ static bool ComputeImeFollowPoint(int* pOutX, int* pOutY)
 	if (vft == 0)
 		return false;
 	// GetAbsLeft/GetAbsTop return the control position in render space;
-	// map render -> client pixels (by windowScale) -> screen.
+	// map render -> client pixels -> screen. Use the *current* client size so
+	// runtime window resizing stays correct (windowScale is startup-only).
 	int nAbsLeft = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
 	int nAbsTop  = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
 	POINT ptOrg = { 0, 0 };
 	ClientToScreen(hWnd, &ptOrg);
-	double dScale = Client::windowScale > 0.0 ? Client::windowScale : 1.0;
-	*pOutX = ptOrg.x + (int)(nAbsLeft * dScale);
-	*pOutY = ptOrg.y + (int)((nAbsTop + IME_FOLLOW_LINE_OFFSET) * dScale);
+	RECT rcClient = { 0, 0, 0, 0 };
+	double dScaleX = 1.0, dScaleY = 1.0;
+	if (GetClientRect(hWnd, &rcClient)
+		&& rcClient.right > 0 && rcClient.bottom > 0
+		&& Client::m_nGameWidth > 0 && Client::m_nGameHeight > 0)
+	{
+		dScaleX = (double)rcClient.right / Client::m_nGameWidth;
+		dScaleY = (double)rcClient.bottom / Client::m_nGameHeight;
+	}
+	else
+	{
+		dScaleX = dScaleY = Client::windowScale > 0.0 ? Client::windowScale : 1.0;
+	}
+	*pOutX = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
+	*pOutY = ptOrg.y + (int)((nAbsTop + IME_FOLLOW_LINE_OFFSET) * dScaleY + 0.5);
 	return true;
 }
 
@@ -79,9 +92,9 @@ static void __cdecl ImeFollowSetCandidateWindow(void* hImc, CANDIDATEFORM* pCdf)
 		pCdf->ptCurrentPos.y = g_imeFollowY;
 	}
 	typedef BOOL(WINAPI* Fn)(HIMC, LPCANDIDATEFORM);
-	Fn fn = (Fn)(*(void**)IME_FN_SET_CANDIDATE_WINDOW);
-	if (fn != nullptr && hImc != nullptr && pCdf != nullptr)
-		fn((HIMC)hImc, pCdf);
+	void* pFn = *(void**)IME_FN_SET_CANDIDATE_WINDOW;
+	if (pFn != nullptr && hImc != nullptr && pCdf != nullptr)
+		((Fn)pFn)((HIMC)hImc, pCdf);
 }
 
 // Mimics the replaced "call ImmSetCompositionWindow(hImc, pCff)".
@@ -91,16 +104,19 @@ static void __cdecl ImeFollowSetCompositionWindow(void* hImc, COMPOSITIONFORM* p
 	if (pCff != nullptr && ComputeImeFollowPoint(&g_imeFollowX, &g_imeFollowY))
 	{
 		HWND hWnd = *(HWND*)(*(DWORD*)IME_WNDMAN_PTR + IME_WNDMAN_HWND);
-		POINT pt = { g_imeFollowX, g_imeFollowY };
-		ScreenToClient(hWnd, &pt);
-		pCff->dwStyle = IME_CFS_POINT;
-		pCff->ptCurrentPos.x = pt.x;
-		pCff->ptCurrentPos.y = pt.y;
+		if (hWnd != nullptr)
+		{
+			POINT pt = { g_imeFollowX, g_imeFollowY };
+			ScreenToClient(hWnd, &pt);
+			pCff->dwStyle = IME_CFS_POINT;
+			pCff->ptCurrentPos.x = pt.x;
+			pCff->ptCurrentPos.y = pt.y;
+		}
 	}
 	typedef BOOL(WINAPI* Fn)(HIMC, LPCOMPOSITIONFORM);
-	Fn fn = (Fn)(*(void**)IME_FN_SET_COMPOSITION_WINDOW);
-	if (fn != nullptr && hImc != nullptr && pCff != nullptr)
-		fn((HIMC)hImc, pCff);
+	void* pFn = *(void**)IME_FN_SET_COMPOSITION_WINDOW;
+	if (pFn != nullptr && hImc != nullptr && pCff != nullptr)
+		((Fn)pFn)((HIMC)hImc, pCff);
 }
 
 // The 6-byte "call dword ptr [ImmSetXxx]" is patched to a jmp to this thunk,
