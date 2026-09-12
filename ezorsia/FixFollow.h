@@ -14,12 +14,13 @@
 //    pushes the candidate window off-screen once, before any edit box has focus.
 //
 // Fix, applied from the subclassed main-window procedure (WindowScaleProc) after
-// the game has handled each IME message:
-//   * answer IMR_QUERYCHARPOSITION, and
-//   * push the IMM composition (client) and candidate (screen) windows to the
-//     focused edit control's caret.
+// the game has handled each composition update: answer IMR_QUERYCHARPOSITION,
+// and push the IMM composition (client) and candidate (screen) windows onto the
+// focused edit control's caret.
 //
-// Set debug=true in config.ini and watch the messages in DebugView.
+// NOTE: WM_IME_NOTIFY is deliberately NOT handled -- moving the candidate window
+// emits IMN_SETCANDIDATEPOS (a WM_IME_NOTIFY), which would recurse forever.
+// ImeFollowForceWindows() is additionally guarded against re-entrancy.
 
 #ifndef IMR_QUERYCHARPOSITION
 #define IMR_QUERYCHARPOSITION 0x000Cu
@@ -39,6 +40,8 @@
 
 // Vertical offset (render units) from the control top down to the text line.
 #define IME_FOLLOW_LINE_OFFSET 20
+
+static bool g_imeForceBusy = false;
 
 // Computes the caret anchor of the focused edit control.
 //   *pSx/*pSy : caret point in SCREEN pixels
@@ -88,9 +91,12 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 }
 
 // Forcibly moves the IMM composition (client coords) and candidate (screen
-// coords) windows to the focused control's caret. Returns true if done.
+// coords) windows to the focused control's caret. Re-entrancy guarded.
 static bool ImeFollowForceWindows()
 {
+	if (g_imeForceBusy)
+		return false;
+
 	HWND hWnd = nullptr;
 	int sx = 0, sy = 0, lineH = 0;
 	if (!ComputeImeCaret(&hWnd, &sx, &sy, &lineH))
@@ -99,6 +105,8 @@ static bool ImeFollowForceWindows()
 	HIMC hImc = ImmGetContext(hWnd);
 	if (hImc == nullptr)
 		return false;
+
+	g_imeForceBusy = true;
 
 	POINT ptClient = { sx, sy };
 	ScreenToClient(hWnd, &ptClient);
@@ -117,15 +125,11 @@ static bool ImeFollowForceWindows()
 	ImmSetCandidateWindow(hImc, &cdf);
 
 	ImmReleaseContext(hWnd, hImc);
+	g_imeForceBusy = false;
 
 	if (Client::debug) {
-		static bool s_bShown = false;
-		if (!s_bShown) {
-			s_bShown = true;
-			MessageBoxA(nullptr, "IME follow hook is running.", "imeFollow", MB_OK);
-		}
 		char buf[128];
-		wsprintfA(buf, "[imeFollow] force comp=(%d,%d)c cand=(%d,%d)s line=%d\n",
+		wsprintfA(buf, "[imeFollow] comp=(%d,%d)c cand=(%d,%d)s line=%d\n",
 			ptClient.x, ptClient.y, sx, sy, lineH);
 		OutputDebugStringA(buf);
 	}
