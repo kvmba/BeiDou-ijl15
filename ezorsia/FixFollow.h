@@ -33,6 +33,8 @@
 
 // CCtrlEdit/CCtrlMLEdit: line height (m_nFontHeight).
 #define IME_CTRL_FONT_HEIGHT   0x7Cu
+#define IME_CTRL_CARET_X       0x58u    // m_nCaretX (caret pixel X)
+#define IME_CTRL_VIEWPORT_X    0x60u    // m_nViewportX (horizontal scroll)
 
 // IUIMsgHandler vtable slots on the focused control.
 #define IME_IUIMSG_GETABSLEFT  0x2Cu    // GetAbsLeft()
@@ -65,6 +67,9 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	// map render -> client pixels -> screen (current client size keeps
 	// runtime window resizing correct; windowScale is the startup value).
 	int nAbsLeft   = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
+	// caret X follows the insertion point (same formula the client's own
+	// CIMECandWnd uses): GetAbsLeft + m_nCaretX - m_nViewportX.
+	nAbsLeft += *(int*)(focus + IME_CTRL_CARET_X) - *(int*)(focus + IME_CTRL_VIEWPORT_X);
 	int nAbsTop    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
 	int nFontHeight = *(int*)(focus + IME_CTRL_FONT_HEIGHT);
 	POINT ptOrg = { 0, 0 };
