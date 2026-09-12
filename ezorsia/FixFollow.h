@@ -98,7 +98,10 @@ static void __cdecl ImeFollowSetCandidateWindow(void* hImc, CANDIDATEFORM* pCdf)
 }
 
 // Mimics the replaced "call ImmSetCompositionWindow(hImc, pCff)".
-// The composition window takes WINDOW (client) coordinates.
+// COMPOSITIONFORM::ptCurrentPos is in CLIENT-area coordinates of the app
+// window (the composition window is a child window; the convention is to feed
+// it GetCaretPos()-style client points). CANDIDATEFORM, by contrast, is in
+// screen coordinates. So the screen point is converted back for this one.
 static void __cdecl ImeFollowSetCompositionWindow(void* hImc, COMPOSITIONFORM* pCff)
 {
 	if (pCff != nullptr && ComputeImeFollowPoint(&g_imeFollowX, &g_imeFollowY))
