@@ -212,11 +212,15 @@ static LRESULT CALLBACK WindowScaleProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 	}
 	LRESULT lr = CallWindowProcA(g_origMainWndProc, hwnd, msg, wParam, lParam);
 	// The game positions the IMM windows off-screen (or not at all); after it
-	// has handled each composition update, force them back onto the caret.
-	// Only composition updates: WM_IME_NOTIFY would recurse (moving the
-	// candidate window emits IMN_SETCANDIDATEPOS).
-	if (msg == WM_IME_STARTCOMPOSITION || msg == WM_IME_COMPOSITION)
-		ImeFollowForceWindows();
+	// has handled each IME message, force them back onto the caret. The
+	// composition-window anchor is set only at composition start (the IME
+	// lays the candidate out from there); updates only move the candidate
+	// window. WM_IME_NOTIFY is not handled (moving the candidate emits
+	// IMN_SETCANDIDATEPOS, which would recurse).
+	if (msg == WM_IME_STARTCOMPOSITION)
+		ImeFollowForceWindows(true);
+	else if (msg == WM_IME_COMPOSITION)
+		ImeFollowForceWindows(false);
 	return lr;
 }
 

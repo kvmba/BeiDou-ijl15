@@ -122,7 +122,7 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 
 // Forcibly moves the IMM composition (client coords) and candidate (screen
 // coords) windows to the focused control's caret. Re-entrancy guarded.
-static bool ImeFollowForceWindows()
+static bool ImeFollowForceWindows(bool bSetComposition)
 {
 	if (g_imeForceBusy)
 		return false;
@@ -138,14 +138,19 @@ static bool ImeFollowForceWindows()
 
 	g_imeForceBusy = true;
 
-	POINT ptClient = { sx, sy };
-	ScreenToClient(hWnd, &ptClient);
-
-	COMPOSITIONFORM cff = { 0 };
-	cff.dwStyle = CFS_POINT;
-	cff.ptCurrentPos.x = ptClient.x;
-	cff.ptCurrentPos.y = ptClient.y;
-	ImmSetCompositionWindow(hImc, &cff);
+	// The composition-window anchor marks where the composing string
+	// STARTS; the IME then lays the candidate out to the right of it. Set
+	// it only once, at composition start -- re-setting it on every update
+	// would double-advance the anchor as the caret moves.
+	if (bSetComposition) {
+		POINT ptClient = { sx, sy };
+		ScreenToClient(hWnd, &ptClient);
+		COMPOSITIONFORM cff = { 0 };
+		cff.dwStyle = CFS_POINT;
+		cff.ptCurrentPos.x = ptClient.x;
+		cff.ptCurrentPos.y = ptClient.y;
+		ImmSetCompositionWindow(hImc, &cff);
+	}
 
 	CANDIDATEFORM cdf = { 0 };
 	cdf.dwIndex = 0;
