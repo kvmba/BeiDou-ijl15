@@ -82,8 +82,7 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	// offsets below are relative to the control base.
 	DWORD ctrl = focus - 4;
 
-	// GetAbsLeft/GetAbsTop return the control position in render space,
-	// which the client maps 1:1 into the window client area.
+	// GetAbsLeft/GetAbsTop return the control position in render space.
 	int nAbsLeft    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
 	int nAbsTop     = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
 	int nFontHeight = *(int*)(ctrl + IME_CTRL_FONT_HEIGHT);
@@ -92,19 +91,32 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	// caret X follows the insertion point (same formula the client's own
 	// CIMECandWnd uses): GetAbsLeft + m_nCaretX - m_nViewportX.
 	nAbsLeft += nCaretX - nViewportX;
-	// The client renders the UI in render-resolution space and does NOT
-	// stretch it with windowScale, so abs coordinates map to the client
-	// 1:1 (windowScale only enlarges the window). Do not scale here.
+	// abs coordinates are in render-resolution space; the client area is
+	// that resolution scaled by the window scale factor (e.g. 1280x720 ->
+	// 1920x1080 at 1.5). Scale render -> client, then client -> screen.
 	POINT ptOrg = { 0, 0 };
 	ClientToScreen(hWnd, &ptOrg);
+	double dScaleX = 1.0, dScaleY = 1.0;
+	RECT rcClient = { 0, 0, 0, 0 };
+	if (GetClientRect(hWnd, &rcClient)
+		&& rcClient.right > 0 && rcClient.bottom > 0
+		&& Client::m_nGameWidth > 0 && Client::m_nGameHeight > 0)
+	{
+		dScaleX = (double)rcClient.right / Client::m_nGameWidth;
+		dScaleY = (double)rcClient.bottom / Client::m_nGameHeight;
+	}
+	else
+	{
+		dScaleX = dScaleY = Client::windowScale > 0.0 ? Client::windowScale : 1.0;
+	}
 
 	*pHWnd = hWnd;
-	*pSx = ptOrg.x + nAbsLeft;
-	*pSy = ptOrg.y + nAbsTop + IME_FOLLOW_LINE_OFFSET;
-	*pLineH = nFontHeight > 0 ? nFontHeight : 16;
-	ImeFollowLog("caret: absL=%d absT=%d caretX=%d viewX=%d fontH=%d | org=(%d,%d) | sx=%d sy=%d lh=%d\n",
+	*pSx = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
+	*pSy = ptOrg.y + (int)((nAbsTop + IME_FOLLOW_LINE_OFFSET) * dScaleY + 0.5);
+	*pLineH = nFontHeight > 0 ? (int)(nFontHeight * dScaleY + 0.5) : 16;
+	ImeFollowLog("caret: absL=%d absT=%d caretX=%d viewX=%d fontH=%d | org=(%d,%d) scale=(%.3f,%.3f) | sx=%d sy=%d lh=%d\n",
 		nAbsLeft - (nCaretX - nViewportX), nAbsTop, nCaretX, nViewportX, nFontHeight,
-		ptOrg.x, ptOrg.y, *pSx, *pSy, *pLineH);
+		ptOrg.x, ptOrg.y, dScaleX, dScaleY, *pSx, *pSy, *pLineH);
 	return true;
 }
 
