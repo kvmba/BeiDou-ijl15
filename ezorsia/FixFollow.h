@@ -1,20 +1,25 @@
 #pragma once
 #include <imm.h>
+#pragma comment(lib, "imm32.lib")
 #include "Client.h"
 
 // IME candidate window follow fix (GMS083 BeiDou client).
 //
-// Root cause: the client never answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION,
-// the message modern (Win8+) IMEs use to ask the focused window where the
-// caret is. With no answer the IME falls back to its default position near the
-// taskbar. The client only ever sets the IMM candidate window once, on
-// WM_INPUTLANGCHANGE (before any edit box has focus) via ImmSetCandidateWindow.
+// Background (verified on BeiDou.exe, imagebase 0x400000):
+//  * The client never answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION, the query
+//    modern (Win8+) IMEs use to learn the caret position, so their UI falls back
+//    to the default spot near the taskbar.
+//  * It also never positions the composition window for AT_CARET IMEs (it only
+//    does so when IME_PROP_SPECIAL_UI is set), and on WM_INPUTLANGCHANGE it
+//    pushes the candidate window off-screen once, before any edit box has focus.
 //
-// Fix: answer the query from the subclassed main-window procedure
-// (WindowScaleProc in ReplacementFuncs.h) with the focused edit control's caret
-// position, so AT_CARET IMEs place their UI at the input box.
+// Fix, applied from the subclassed main-window procedure (WindowScaleProc) after
+// the game has handled each IME message:
+//   * answer IMR_QUERYCHARPOSITION, and
+//   * push the IMM composition (client) and candidate (screen) windows to the
+//     focused edit control's caret.
 //
-// Verified against BeiDou.exe (GMS083): imagebase 0x400000.
+// Set debug=true in config.ini and watch the messages in DebugView.
 
 #ifndef IMR_QUERYCHARPOSITION
 #define IMR_QUERYCHARPOSITION 0x000Cu
@@ -38,8 +43,6 @@
 // Computes the caret anchor of the focused edit control.
 //   *pSx/*pSy : caret point in SCREEN pixels
 //   *pLineH   : text line height in SCREEN pixels
-// Returns false (and leaves outputs untouched) when there is no focused control
-// or the feature is disabled.
 static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 {
 	if (Client::imeFollow == 0)
@@ -56,8 +59,8 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 		return false;
 
 	// GetAbsLeft/GetAbsTop return the control position in render space;
-	// map render -> client pixels -> screen. Use the *current* client size so
-	// runtime window resizing stays correct (windowScale is startup-only).
+	// map render -> client pixels -> screen (current client size keeps
+	// runtime window resizing correct; windowScale is the startup value).
 	int nAbsLeft   = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
 	int nAbsTop    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
 	int nFontHeight = *(int*)(focus + IME_CTRL_FONT_HEIGHT);
@@ -84,9 +87,53 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	return true;
 }
 
+// Forcibly moves the IMM composition (client coords) and candidate (screen
+// coords) windows to the focused control's caret. Returns true if done.
+static bool ImeFollowForceWindows()
+{
+	HWND hWnd = nullptr;
+	int sx = 0, sy = 0, lineH = 0;
+	if (!ComputeImeCaret(&hWnd, &sx, &sy, &lineH))
+		return false;
+
+	HIMC hImc = ImmGetContext(hWnd);
+	if (hImc == nullptr)
+		return false;
+
+	POINT ptClient = { sx, sy };
+	ScreenToClient(hWnd, &ptClient);
+
+	COMPOSITIONFORM cff = { 0 };
+	cff.dwStyle = CFS_POINT;
+	cff.ptCurrentPos.x = ptClient.x;
+	cff.ptCurrentPos.y = ptClient.y;
+	ImmSetCompositionWindow(hImc, &cff);
+
+	CANDIDATEFORM cdf = { 0 };
+	cdf.dwIndex = 0;
+	cdf.dwStyle = CFS_CANDIDATEPOS;
+	cdf.ptCurrentPos.x = sx;
+	cdf.ptCurrentPos.y = sy;
+	ImmSetCandidateWindow(hImc, &cdf);
+
+	ImmReleaseContext(hWnd, hImc);
+
+	if (Client::debug) {
+		static bool s_bShown = false;
+		if (!s_bShown) {
+			s_bShown = true;
+			MessageBoxA(nullptr, "IME follow hook is running.", "imeFollow", MB_OK);
+		}
+		char buf[128];
+		wsprintfA(buf, "[imeFollow] force comp=(%d,%d)c cand=(%d,%d)s line=%d\n",
+			ptClient.x, ptClient.y, sx, sy, lineH);
+		OutputDebugStringA(buf);
+	}
+	return true;
+}
+
 // Answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION. IMECHARPOSITION::pt and
-// rcDocument are expected in SCREEN coordinates (the IME lives in another
-// process and positions its own top-level window from them).
+// rcDocument are SCREEN coordinates (the IME is another process).
 static bool ImeFollowQueryCharPosition(LPARAM lParam)
 {
 	if (lParam == 0)
@@ -113,5 +160,7 @@ static bool ImeFollowQueryCharPosition(LPARAM lParam)
 		pIcp->rcDocument.right = br.x;
 		pIcp->rcDocument.bottom = br.y;
 	}
+	if (Client::debug)
+		OutputDebugStringA("[imeFollow] IMR_QUERYCHARPOSITION answered\n");
 	return true;
 }
