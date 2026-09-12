@@ -129,12 +129,14 @@ static bool ImeFollowForceWindows()
 
 	g_imeForceBusy = true;
 
-	// Screen coordinates with CFS_FORCE_POSITION (the client's own code passes
-	// screen-style coordinates to both calls; CFS_POINT is often ignored).
+	// COMPOSITIONFORM is in CLIENT coordinates. The IME anchors its candidate
+	// window to this point, so it must be updated as the caret moves.
+	POINT ptClient = { sx, sy };
+	ScreenToClient(hWnd, &ptClient);
 	COMPOSITIONFORM cff = { 0 };
-	cff.dwStyle = CFS_FORCE_POSITION;
-	cff.ptCurrentPos.x = sx;
-	cff.ptCurrentPos.y = sy;
+	cff.dwStyle = CFS_POINT;
+	cff.ptCurrentPos.x = ptClient.x;
+	cff.ptCurrentPos.y = ptClient.y;
 	ImmSetCompositionWindow(hImc, &cff);
 
 	CANDIDATEFORM cdf = { 0 };
@@ -177,12 +179,4 @@ static bool ImeFollowQueryCharPosition(LPARAM lParam)
 		pIcp->rcDocument.bottom = br.y;
 	}
 	return true;
-}
-
-// Diagnostic: log IME messages actually delivered to the window.
-static void ImeFollowTraceMsg(unsigned int msg, unsigned int wParam)
-{
-	if (!Client::debug)
-		return;
-	ImeFollowLog("MSG id=0x%03X wParam=0x%X\n", msg, wParam);
 }
