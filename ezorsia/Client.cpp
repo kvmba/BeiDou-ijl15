@@ -2,6 +2,7 @@
 #include "AddyLocations.h"
 #include "codecaves.h"
 #include "FixIme.h"
+#include "FixFollow.h"
 #include "FixBuddy.h"
 
 #include "MapleClientCollectionTypes/ZXString.h"
@@ -27,6 +28,7 @@ bool Client::debug = false; // 调试模式
 bool Client::climbSpeedAuto = false; // 自动攀爬速度
 float Client::climbSpeed = 1.0; // 攀爬速度
 unsigned char Client::imeType = 1; // 输入法类型
+bool Client::imeFollow = true; // 输入法候选框跟随输入框
 std::string Client::ServerIP_AddressFromINI = "127.0.0.1"; // 服务器IP地址
 int Client::serverIP_Port = 8484; // 服务器端口
 bool Client::talkRepeat = false; // 重复说话
@@ -765,6 +767,10 @@ void Client::Chinese() {
 	}
 	else {
 		FixIme::HookNew();
+	}
+
+	if (Client::imeFollow) {
+		FixFollow::Hook();
 	}
 
 	FixBuddy::Hook();

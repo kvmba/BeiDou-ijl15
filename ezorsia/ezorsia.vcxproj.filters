@@ -147,6 +147,9 @@
     <ClInclude Include="FixIme.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FixFollow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="FixBuddy.h">
       <Filter>Header Files</Filter>
     </ClInclude>

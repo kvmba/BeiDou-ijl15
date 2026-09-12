@@ -40,6 +40,7 @@ public:
 	static float climbSpeed;
 	static int speedMovementCap;
 	static unsigned char imeType;
+	static bool imeFollow;
 	static DWORD jumpCap;
 	static std::string ServerIP_AddressFromINI;
 	static int serverIP_Port;
