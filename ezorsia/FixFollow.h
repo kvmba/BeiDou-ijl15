@@ -1,6 +1,8 @@
 #pragma once
 #include <imm.h>
 #pragma comment(lib, "imm32.lib")
+#include <cstdio>
+#include <cstdarg>
 #include "Client.h"
 
 // IME candidate window follow fix (GMS083 BeiDou client).
@@ -45,6 +47,20 @@
 
 static bool g_imeForceBusy = false;
 
+static void ImeFollowLog(const char* fmt, ...)
+{
+	if (!Client::debug)
+		return;
+	FILE* f = fopen("imefollow.log", "a");
+	if (!f)
+		return;
+	va_list ap;
+	va_start(ap, fmt);
+	vfprintf(f, fmt, ap);
+	va_end(ap);
+	fclose(f);
+}
+
 // Computes the caret anchor of the focused edit control.
 //   *pSx/*pSy : caret point in SCREEN pixels
 //   *pLineH   : text line height in SCREEN pixels
@@ -62,16 +78,21 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	DWORD vft = *(DWORD*)focus;
 	if (vft == 0)
 		return false;
+	// focus is the IUIMsgHandler subobject (control base + 4); the layout
+	// offsets below are relative to the control base.
+	DWORD ctrl = focus - 4;
 
 	// GetAbsLeft/GetAbsTop return the control position in render space;
 	// map render -> client pixels -> screen (current client size keeps
 	// runtime window resizing correct; windowScale is the startup value).
-	int nAbsLeft   = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
+	int nAbsLeft    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
+	int nAbsTop     = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
+	int nFontHeight = *(int*)(ctrl + IME_CTRL_FONT_HEIGHT);
+	int nCaretX     = *(int*)(ctrl + IME_CTRL_CARET_X);
+	int nViewportX  = *(int*)(ctrl + IME_CTRL_VIEWPORT_X);
 	// caret X follows the insertion point (same formula the client's own
 	// CIMECandWnd uses): GetAbsLeft + m_nCaretX - m_nViewportX.
-	nAbsLeft += *(int*)(focus + IME_CTRL_CARET_X) - *(int*)(focus + IME_CTRL_VIEWPORT_X);
-	int nAbsTop    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
-	int nFontHeight = *(int*)(focus + IME_CTRL_FONT_HEIGHT);
+	nAbsLeft += nCaretX - nViewportX;
 	POINT ptOrg = { 0, 0 };
 	ClientToScreen(hWnd, &ptOrg);
 	double dScaleX = 1.0, dScaleY = 1.0;
@@ -92,6 +113,9 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	*pSx = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
 	*pSy = ptOrg.y + (int)((nAbsTop + IME_FOLLOW_LINE_OFFSET) * dScaleY + 0.5);
 	*pLineH = (int)(nFontHeight * dScaleY + 0.5);
+	ImeFollowLog("caret: absL=%d absT=%d caretX=%d viewX=%d fontH=%d | org=(%d,%d) scale=(%.3f,%.3f) | sx=%d sy=%d lh=%d\n",
+		nAbsLeft - (nCaretX - nViewportX), nAbsTop, nCaretX, nViewportX, nFontHeight,
+		ptOrg.x, ptOrg.y, dScaleX, dScaleY, *pSx, *pSy, *pLineH);
 	return true;
 }
 
