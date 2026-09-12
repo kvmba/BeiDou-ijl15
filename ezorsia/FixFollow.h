@@ -5,24 +5,19 @@
 #include <cstdarg>
 #include "Client.h"
 
-// IME candidate window follow fix (GMS083 BeiDou client).
+// IME candidate/composition window follow fix (GMS083 BeiDou client).
 //
-// Background (verified on BeiDou.exe, imagebase 0x400000):
-//  * The client never answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION, the query
-//    modern (Win8+) IMEs use to learn the caret position, so their UI falls back
-//    to the default spot near the taskbar.
-//  * It also never positions the composition window for AT_CARET IMEs (it only
-//    does so when IME_PROP_SPECIAL_UI is set), and on WM_INPUTLANGCHANGE it
-//    pushes the candidate window off-screen once, before any edit box has focus.
+// The client never answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION and only
+// places the IMM candidate window once (on WM_INPUTLANGCHANGE, before any edit
+// box has focus), pushing it off-screen. We answer the query and, after the
+// game handles each composition update, force the IMM windows onto the focused
+// edit control's caret.
 //
-// Fix, applied from the subclassed main-window procedure (WindowScaleProc) after
-// the game has handled each composition update: answer IMR_QUERYCHARPOSITION,
-// and push the IMM composition (client) and candidate (screen) windows onto the
-// focused edit control's caret.
-//
-// NOTE: WM_IME_NOTIFY is deliberately NOT handled -- moving the candidate window
-// emits IMN_SETCANDIDATEPOS (a WM_IME_NOTIFY), which would recurse forever.
-// ImeFollowForceWindows() is additionally guarded against re-entrancy.
+// Coordinates follow the client's own convention (see sub_9E7D77 which passes
+// (-SM_CXSCREEN, -SM_CYSCREEN) to both calls): screen coordinates, using
+// CFS_FORCE_POSITION for the composition window so the IME does not ignore it.
+// WM_IME_NOTIFY is deliberately not handled (moving the candidate emits
+// IMN_SETCANDIDATEPOS, which would recurse); re-entrancy is also guarded.
 
 #ifndef IMR_QUERYCHARPOSITION
 #define IMR_QUERYCHARPOSITION 0x000Cu
@@ -30,19 +25,21 @@
 
 // CWndMan singleton: focused control + main window handle.
 #define IME_WNDMAN_PTR         0x00BEC20Cu
-#define IME_WNDMAN_FOCUS       0x88u    // m_pFocus (IUIMsgHandler*)
+#define IME_WNDMAN_FOCUS       0x88u    // m_pFocus (IUIMsgHandler* = control base + 4)
 #define IME_WNDMAN_HWND        0xACu    // m_hWnd
 
-// CCtrlEdit/CCtrlMLEdit: line height (m_nFontHeight).
-#define IME_CTRL_FONT_HEIGHT   0x7Cu
-#define IME_CTRL_CARET_X       0x58u    // m_nCaretX (render px, grows with text)
+// CCtrlEdit/CCtrlMLEdit fields, relative to the CONTROL BASE (focus - 4).
+#define IME_CTRL_FONT_HEIGHT   0x7Cu    // m_nFontHeight
+#define IME_CTRL_CARET_X       0x58u    // m_nCaretX (caret pixel X, render space)
 
 // IUIMsgHandler vtable slots on the focused control.
 #define IME_IUIMSG_GETABSLEFT  0x2Cu    // GetAbsLeft()
 #define IME_IUIMSG_GETABSTOP   0x30u    // GetAbsTop()
 
-// Vertical offset (render units) from the control top down to the text line.
-#define IME_FOLLOW_LINE_OFFSET 20
+// CFS_FORCE_POSITION: force the composition position (screen coords).
+#ifndef CFS_FORCE_POSITION
+#define CFS_FORCE_POSITION     0x0020u
+#endif
 
 static bool g_imeForceBusy = false;
 
@@ -60,9 +57,7 @@ static void ImeFollowLog(const char* fmt, ...)
 	fclose(f);
 }
 
-// Computes the caret anchor of the focused edit control.
-//   *pSx/*pSy : caret point in SCREEN pixels
-//   *pLineH   : text line height in SCREEN pixels
+// Computes the caret anchor of the focused edit control, in SCREEN pixels.
 static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 {
 	if (Client::imeFollow == 0)
@@ -77,14 +72,21 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	DWORD vft = *(DWORD*)focus;
 	if (vft == 0)
 		return false;
+	DWORD ctrl = focus - 4;   // control base
 
-	// GetAbsLeft/GetAbsTop return the control position in render space;
-	// map render -> client pixels -> screen (current client size keeps
-	// runtime window resizing correct; windowScale is the startup value).
-	int nAbsLeft   = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
-	int nAbsTop    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
-	int nFontHeight = *(int*)(focus + IME_CTRL_FONT_HEIGHT);
-	int nCaretX     = *(int*)(focus - 4 + IME_CTRL_CARET_X);   // control base = focus - 4
+	// GetAbsLeft/GetAbsTop return the control position in render space; the
+	// client area is that render resolution scaled by the window scale factor
+	// (e.g. 1280x720 -> 1920x1080 at 1.5).
+	int nAbsLeft    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
+	int nAbsTop     = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
+	int nFontHeight = *(int*)(ctrl + IME_CTRL_FONT_HEIGHT);
+	int nCaretX     = *(int*)(ctrl + IME_CTRL_CARET_X);
+	// Same anchor the client's own CIMECandWnd uses:
+	//   X = GetAbsLeft + m_nCaretX ; Y = GetAbsTop + m_nFontHeight + 1
+	nAbsLeft += nCaretX;
+	if (nFontHeight <= 0)
+		nFontHeight = 16;
+
 	POINT ptOrg = { 0, 0 };
 	ClientToScreen(hWnd, &ptOrg);
 	double dScaleX = 1.0, dScaleY = 1.0;
@@ -102,27 +104,16 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	}
 
 	*pHWnd = hWnd;
-	*pSx = ptOrg.x + (int)((nAbsLeft + nCaretX) * dScaleX + 0.5);   // follow insertion point
-	*pSy = ptOrg.y + (int)((nAbsTop + IME_FOLLOW_LINE_OFFSET) * dScaleY + 0.5);
+	*pSx = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
+	*pSy = ptOrg.y + (int)((nAbsTop + nFontHeight + 1) * dScaleY + 0.5);
 	*pLineH = (int)(nFontHeight * dScaleY + 0.5);
-	{
-		DWORD ctrl = focus - 4;
-		int cx = *(int*)(ctrl + 0x58);
-		int vx = *(int*)(ctrl + 0x60);
-		RECT wrc = { 0,0,0,0 }, crc = { 0,0,0,0 };
-		GetWindowRect(hWnd, &wrc);
-		GetClientRect(hWnd, &crc);
-		ImeFollowLog("LOG absL=%d absT=%d fontH=%d caretX=%d viewX=%d | win=(%d,%d,%d,%d) client=(%d,%d) | scale=(%.3f,%.3f) -> sx=%d sy=%d lh=%d\n",
-			nAbsLeft, nAbsTop, nFontHeight, cx, vx,
-			wrc.left, wrc.top, wrc.right, wrc.bottom, crc.right, crc.bottom,
-			dScaleX, dScaleY, *pSx, *pSy, *pLineH);
-	}
+	ImeFollowLog("v9 caretX=%d absT=%d fontH=%d org=(%d,%d) scale=(%.3f,%.3f) -> sx=%d sy=%d lh=%d\n",
+		nCaretX, nAbsTop, nFontHeight, ptOrg.x, ptOrg.y, dScaleX, dScaleY, *pSx, *pSy, *pLineH);
 	return true;
 }
 
-// Forcibly moves the IMM composition (client coords) and candidate (screen
-// coords) windows to the focused control's caret. Re-entrancy guarded.
-static bool ImeFollowForceWindows(bool bSetComposition)
+// Forcibly moves the IMM composition and candidate windows to the caret.
+static bool ImeFollowForceWindows()
 {
 	if (g_imeForceBusy)
 		return false;
@@ -138,19 +129,13 @@ static bool ImeFollowForceWindows(bool bSetComposition)
 
 	g_imeForceBusy = true;
 
-	// The composition-window anchor marks where the composing string
-	// STARTS; the IME then lays the candidate out to the right of it. Set
-	// it only once, at composition start -- re-setting it on every update
-	// would double-advance the anchor as the caret moves.
-	if (bSetComposition) {
-		POINT ptClient = { sx, sy };
-		ScreenToClient(hWnd, &ptClient);
-		COMPOSITIONFORM cff = { 0 };
-		cff.dwStyle = CFS_POINT;
-		cff.ptCurrentPos.x = ptClient.x;
-		cff.ptCurrentPos.y = ptClient.y;
-		ImmSetCompositionWindow(hImc, &cff);
-	}
+	// Screen coordinates with CFS_FORCE_POSITION (the client's own code passes
+	// screen-style coordinates to both calls; CFS_POINT is often ignored).
+	COMPOSITIONFORM cff = { 0 };
+	cff.dwStyle = CFS_FORCE_POSITION;
+	cff.ptCurrentPos.x = sx;
+	cff.ptCurrentPos.y = sy;
+	ImmSetCompositionWindow(hImc, &cff);
 
 	CANDIDATEFORM cdf = { 0 };
 	cdf.dwIndex = 0;
@@ -161,12 +146,10 @@ static bool ImeFollowForceWindows(bool bSetComposition)
 
 	ImmReleaseContext(hWnd, hImc);
 	g_imeForceBusy = false;
-
 	return true;
 }
 
-// Answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION. IMECHARPOSITION::pt and
-// rcDocument are SCREEN coordinates (the IME is another process).
+// Answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION (screen coordinates).
 static bool ImeFollowQueryCharPosition(LPARAM lParam)
 {
 	if (lParam == 0)
@@ -193,7 +176,5 @@ static bool ImeFollowQueryCharPosition(LPARAM lParam)
 		pIcp->rcDocument.right = br.x;
 		pIcp->rcDocument.bottom = br.y;
 	}
-	if (Client::debug)
-		OutputDebugStringA("[imeFollow] IMR_QUERYCHARPOSITION answered\n");
 	return true;
 }
