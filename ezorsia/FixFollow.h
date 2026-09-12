@@ -35,6 +35,7 @@
 
 // CCtrlEdit/CCtrlMLEdit: line height (m_nFontHeight).
 #define IME_CTRL_FONT_HEIGHT   0x7Cu
+#define IME_CTRL_CARET_X       0x58u    // m_nCaretX (render px, grows with text)
 
 // IUIMsgHandler vtable slots on the focused control.
 #define IME_IUIMSG_GETABSLEFT  0x2Cu    // GetAbsLeft()
@@ -83,6 +84,7 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	int nAbsLeft   = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSLEFT))(focus);
 	int nAbsTop    = ((int(__thiscall*)(DWORD))*(DWORD*)(vft + IME_IUIMSG_GETABSTOP))(focus);
 	int nFontHeight = *(int*)(focus + IME_CTRL_FONT_HEIGHT);
+	int nCaretX     = *(int*)(focus - 4 + IME_CTRL_CARET_X);   // control base = focus - 4
 	POINT ptOrg = { 0, 0 };
 	ClientToScreen(hWnd, &ptOrg);
 	double dScaleX = 1.0, dScaleY = 1.0;
@@ -100,7 +102,7 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	}
 
 	*pHWnd = hWnd;
-	*pSx = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
+	*pSx = ptOrg.x + (int)((nAbsLeft + nCaretX) * dScaleX + 0.5);   // follow insertion point
 	*pSy = ptOrg.y + (int)((nAbsTop + IME_FOLLOW_LINE_OFFSET) * dScaleY + 0.5);
 	*pLineH = (int)(nFontHeight * dScaleY + 0.5);
 	{
