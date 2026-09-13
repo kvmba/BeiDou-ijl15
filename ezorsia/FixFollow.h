@@ -1,28 +1,22 @@
 #pragma once
 #include <imm.h>
 #pragma comment(lib, "imm32.lib")
-#include <cstdio>
-#include <cstdarg>
 #include "Client.h"
 
 // IME candidate/composition window follow fix (GMS083 BeiDou client).
 //
-// The client never answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION and only
-// places the IMM candidate window once (on WM_INPUTLANGCHANGE, before any edit
-// box has focus), pushing it off-screen. We answer the query and, after the
+// The client only places the IMM candidate window once (on WM_INPUTLANGCHANGE,
+// before any edit box has focus), pushing it off-screen, and never answers
+// WM_IME_REQUEST / IMR_QUERYCHARPOSITION. We answer that query and, after the
 // game handles each composition update, force the IMM windows onto the focused
 // edit control's caret.
 //
 // Both COMPOSITIONFORM and CANDIDATEFORM take CLIENT coordinates (relative to
 // the window's upper-left); only IMECHARPOSITION (IMR_QUERYCHARPOSITION) uses
 // SCREEN coordinates. The client itself follows this (see sub_9E7D77, which
-// parks both windows with negative client coords). WM_IME_NOTIFY is
-// deliberately not handled (moving the candidate emits IMN_SETCANDIDATEPOS,
-// which would recurse); re-entrancy is also guarded.
-
-#ifndef IMR_QUERYCHARPOSITION
-#define IMR_QUERYCHARPOSITION 0x000Cu
-#endif
+// parks both windows with negative client coords). WM_IME_NOTIFY is handled
+// only for IMN_OPENCANDIDATE -- the most reliable moment to (re)assert the
+// candidate; other notifications are ignored, and re-entrancy is guarded.
 
 // CWndMan singleton: focused control + main window handle.
 #define IME_WNDMAN_PTR         0x00BEC20Cu
@@ -37,26 +31,7 @@
 #define IME_IUIMSG_GETABSLEFT  0x2Cu    // GetAbsLeft()
 #define IME_IUIMSG_GETABSTOP   0x30u    // GetAbsTop()
 
-// CFS_FORCE_POSITION: force the composition position (screen coords).
-#ifndef CFS_FORCE_POSITION
-#define CFS_FORCE_POSITION     0x0020u
-#endif
-
 static bool g_imeForceBusy = false;
-
-static void ImeFollowLog(const char* fmt, ...)
-{
-	if (!Client::debug)
-		return;
-	FILE* f = nullptr;
-	if (fopen_s(&f, "imefollow.log", "a") != 0 || f == nullptr)
-		return;
-	va_list ap;
-	va_start(ap, fmt);
-	vfprintf(f, fmt, ap);
-	va_end(ap);
-	fclose(f);
-}
 
 // Computes the caret anchor of the focused edit control, in SCREEN pixels.
 static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
@@ -108,8 +83,6 @@ static bool ComputeImeCaret(HWND* pHWnd, int* pSx, int* pSy, int* pLineH)
 	*pSx = ptOrg.x + (int)(nAbsLeft * dScaleX + 0.5);
 	*pSy = ptOrg.y + (int)((nAbsTop + nFontHeight + 1) * dScaleY + 0.5);
 	*pLineH = (int)(nFontHeight * dScaleY + 0.5);
-	ImeFollowLog("v11 caretX=%d absT=%d fontH=%d org=(%d,%d) scale=(%.3f,%.3f) -> sx=%d sy=%d lh=%d\n",
-		nCaretX, nAbsTop, nFontHeight, ptOrg.x, ptOrg.y, dScaleX, dScaleY, *pSx, *pSy, *pLineH);
 	return true;
 }
 
@@ -152,16 +125,6 @@ static bool ImeFollowForceWindows()
 	ImmReleaseContext(hWnd, hImc);
 	g_imeForceBusy = false;
 	return true;
-}
-
-// Called on WM_IME_NOTIFY / IMN_OPENCANDIDATE: the IME is about to show its
-// candidate window, so (re)assert its position now -- the most reliable
-// point (some IMEs read the position only when opening the candidate).
-static void ImeFollowOnOpenCandidate()
-{
-	if (g_imeForceBusy)
-		return;
-	ImeFollowForceWindows();
 }
 
 // Answers WM_IME_REQUEST / IMR_QUERYCHARPOSITION (screen coordinates).
