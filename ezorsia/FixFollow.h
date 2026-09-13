@@ -13,11 +13,12 @@
 // game handles each composition update, force the IMM windows onto the focused
 // edit control's caret.
 //
-// Coordinates follow the client's own convention (see sub_9E7D77 which passes
-// (-SM_CXSCREEN, -SM_CYSCREEN) to both calls): screen coordinates, using
-// CFS_FORCE_POSITION for the composition window so the IME does not ignore it.
-// WM_IME_NOTIFY is deliberately not handled (moving the candidate emits
-// IMN_SETCANDIDATEPOS, which would recurse); re-entrancy is also guarded.
+// Both COMPOSITIONFORM and CANDIDATEFORM take CLIENT coordinates (relative to
+// the window's upper-left); only IMECHARPOSITION (IMR_QUERYCHARPOSITION) uses
+// SCREEN coordinates. The client itself follows this (see sub_9E7D77, which
+// parks both windows with negative client coords). WM_IME_NOTIFY is
+// deliberately not handled (moving the candidate emits IMN_SETCANDIDATEPOS,
+// which would recurse); re-entrancy is also guarded.
 
 #ifndef IMR_QUERYCHARPOSITION
 #define IMR_QUERYCHARPOSITION 0x000Cu
@@ -129,8 +130,10 @@ static bool ImeFollowForceWindows()
 
 	g_imeForceBusy = true;
 
-	// COMPOSITIONFORM is in CLIENT coordinates. The IME anchors its candidate
-	// window to this point, so it must be updated as the caret moves.
+	// Both COMPOSITIONFORM and CANDIDATEFORM use CLIENT coordinates
+	// (relative to the window's upper-left). Feeding screen coords here makes
+	// the value overshoot the client rect once the window is offset from the
+	// screen origin, and Windows clamps the candidate to the bottom-right.
 	POINT ptClient = { sx, sy };
 	ScreenToClient(hWnd, &ptClient);
 	COMPOSITIONFORM cff = { 0 };
@@ -142,8 +145,8 @@ static bool ImeFollowForceWindows()
 	CANDIDATEFORM cdf = { 0 };
 	cdf.dwIndex = 0;
 	cdf.dwStyle = CFS_CANDIDATEPOS;
-	cdf.ptCurrentPos.x = sx;
-	cdf.ptCurrentPos.y = sy;
+	cdf.ptCurrentPos.x = ptClient.x;
+	cdf.ptCurrentPos.y = ptClient.y;
 	ImmSetCandidateWindow(hImc, &cdf);
 
 	ImmReleaseContext(hWnd, hImc);
