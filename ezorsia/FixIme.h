@@ -130,6 +130,43 @@ __declspec(naked) void newSwitchMLIme() {
 }
 
 
+// 失焦(arg_0==0)时关闭输入法：客户端 OnSetFocus 的失焦分支不调用
+// sub_9E85F3(CWndMan,0)，焦点离开输入框后 IME 仍关联/打开，游戏内按键仍会
+// 弹出候选框（需手动切英文）。故在失焦分支补上禁用。
+DWORD editFocusRtnAddr = 0x004CA061;
+DWORD editBlurRtnAddr = 0x004CA091;
+__declspec(naked) void newEditOnSetFocus() {
+	__asm {
+		cmp  dword ptr [esp + 0Ch], 0
+		jz   label_edit_blur
+		jmp  editFocusRtnAddr
+		label_edit_blur :
+		mov  ecx, 0x00BEC20C
+		mov  ecx, [ecx]
+		push 0
+		call funcEnableImeAddr
+		mov  enabled, 0
+		jmp  editBlurRtnAddr
+	}
+}
+
+DWORD mlFocusRtnAddr = 0x004D32C8;
+DWORD mlBlurRtnAddr = 0x004D32E2;
+__declspec(naked) void newMLOnSetFocus() {
+	__asm {
+		cmp  dword ptr [esp + 8], 0
+		jz   label_ml_blur
+		jmp  mlFocusRtnAddr
+		label_ml_blur :
+		mov  ecx, 0x00BEC20C
+		mov  ecx, [ecx]
+		push 0
+		call funcEnableImeAddr
+		mov  enabled, 0
+		jmp  mlBlurRtnAddr
+	}
+}
+
 class FixIme {
 public:
 	static void HookOld() {
@@ -154,6 +191,8 @@ public:
 		GeneralHook();
 		// 单行输入框启用IME
 		Memory::CodeCave(newSwitchIme, 0x004CA089, 6);
+		Memory::CodeCave(newEditOnSetFocus, 0x004CA05B, 6); // 失焦时禁用输入法（单行）
+		Memory::CodeCave(newMLOnSetFocus, 0x004D32C1, 7); // 失焦时禁用输入法（多行）
 		Memory::CodeCave(destroyWindow, 0x004DFEA4, 9); // 销毁窗口时固定禁用IME
 		//Memory::WriteByte(0x004D32D9 + 1, 1); // 多行输入
 		Memory::CodeCave(newSwitchMLIme, 0x004D32D9, 7); // 多行输入
