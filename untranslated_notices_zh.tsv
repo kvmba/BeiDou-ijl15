@@ -1,0 +1,285 @@
+index	category	en	zh
+81	公告/广播	Check out the MapleStory Notice board.	请查看冒险岛公告板。
+94	系统提示/错误	MapleStory Error : Actionframe loadmappper failed.	冒险岛错误 : 动作帧映射加载失败。
+95	系统提示/错误	MapleStory Error : Loading employee failed.	冒险岛错误 : 雇用商人加载失败。
+96	系统提示/错误	MapleStory Error : Loading mob failed.	冒险岛错误 : 怪物加载失败。
+97	系统提示/错误	MapleStory Error : Loading morph failed.	冒险岛错误 : 变身加载失败。
+98	系统提示/错误	MapleStory Error : Loading NPC failed.	冒险岛错误 : NPC加载失败。
+99	系统提示/错误	MapleStory Error : Loading pet failed.	冒险岛错误 : 宠物加载失败。
+100	系统提示/错误	MapleStory Error : Loading reactor failed.	冒险岛错误 : 机关加载失败。
+101	系统提示/错误	MapleStory Error : Loading tamingmob failed.	冒险岛错误 : 骑宠加载失败。
+102	系统提示/错误	MapleStory Error : Sprite commonslot failed.	冒险岛错误 : Sprite通用槽失败。
+103	系统提示/错误	MapleStory Error : Sprite init failed(empty).	冒险岛错误 : Sprite初始化失败(空)。
+104	系统提示/错误	MapleStory Error : Sprite init failed(unknown).	冒险岛错误 : Sprite初始化失败(未知)。
+105	系统提示/错误	MapleStory Error : MapleTV init failed.	冒险岛错误 : 冒险岛TV初始化失败。
+106	系统提示/错误	MapleStory Error : QuestMan init failed.	冒险岛错误 : 任务管理器初始化失败。
+107	系统提示/错误	MapleStory Error : iteminfo error.	冒险岛错误 : 道具信息错误。
+108	系统提示/错误	MapleStory Error : skillinfo error.	冒险岛错误 : 技能信息错误。
+109	系统提示/错误	MapleStory Error : Loading mobskill failed.	冒险岛错误 : 怪物技能加载失败。
+110	系统提示/错误	MapleStory Error : Loading commodity failed.	冒险岛错误 : 商品加载失败。
+111	系统提示/错误	MapleStory Error : Loading package failed.	冒险岛错误 : 礼包加载失败。
+112	系统提示/错误	MapleStory Error : Cashshop failed(type1).	冒险岛错误 : 商城失败(类型1)。
+113	系统提示/错误	MapleStory Error : Cashshop failed(type2).	冒险岛错误 : 商城失败(类型2)。
+114	系统提示/错误	MapleStory Error : DraggableItem error.	冒险岛错误 : 可拖动物品错误。
+115	系统提示/错误	MapleStory Error : Employee error.	冒险岛错误 : 雇用商人错误。
+116	系统提示/错误	MapleStory Error : Mob error.	冒险岛错误 : 怪物错误。
+117	系统提示/错误	MapleStory Error : NPC error.	冒险岛错误 : NPC错误。
+118	系统提示/错误	MapleStory Error : Pet error.	冒险岛错误 : 宠物错误。
+119	系统提示/错误	MapleStory Error : Summoned error.	冒险岛错误 : 召唤兽错误。
+120	系统提示/错误	MapleStory Error : ActionMan error(type1).	冒险岛错误 : 动作系统错误(类型1)。
+121	系统提示/错误	MapleStory Error : ActionMan error(type2).	冒险岛错误 : 动作系统错误(类型2)。
+268	状态通知	The World Map is unavailable in \r\nthe Beginner's Version.\r\nPlease download the full client at\r\nmaplestory.nexon.net for access to this feature.	体验版无法使用世界地图。\r\n请到 maplestory.nexon.net 下载完整客户端，\r\n以使用该功能。
+269	状态通知	The World Map is unavailable to Guest ID players.\r\nPlease download the full client at\r\nmaplestory.nexon.net \r\nfor access to this feature.	访客账号无法使用世界地图。\r\n请到 maplestory.nexon.net \r\n下载完整客户端，以使用该功能。
+274	状态通知	The effect is taking place right now.\r\nPlease try it later.	该效果正在生效中。\r\n请稍后再试。
+391	系统提示/错误	The character you logged on with\r\nhas not requested a name change.	当前登录的角色\r\n没有申请过改名。
+520	状态通知	Press the CHECK button \r\nto check if you can use\r\nthe name of the character.	请点击“确认”按钮 \r\n检查角色名\r\n是否可用。
+522	系统提示/错误	This applies to the limitations on the request.\r\nPlease check if you were recently banned \r\nwithin 3 months.	此次申请受到限制。\r\n请确认您最近3个月内\r\n是否有被封停记录。
+524	系统提示/错误	There will not be any refund \r\nfor canceling this request.	取消此次申请将不予退款。
+525	确认询问	Are you sure you want to cancel \r\nthe name change request?	确定要取消改名申请吗？
+526	状态通知	Your name change request \r\nhas been successfully submitted.	您的改名申请\r\n已成功提交。
+544	状态通知	This coupon can only be used at\r\nNexon-affiliated Internet Cafe's.\r\nPlease use the Nexon-affiliated Internet Cafe's.	该领奖卡只能在\r\nNexon合作网吧使用。\r\n请到Nexon合作网吧使用。
+546	状态通知	This coupon is a Nexon-affiliated Internet Cafe-only coupon,\r\nand it had already been expired.	该领奖卡是Nexon合作网吧专用领奖卡，\r\n而且已经过期。
+548	状态通知	You are disconnected \r\nfrom Cash Shop \r\nbecause you put wrong \r\nCoupon numbers three times.	由于连续3次输入错误的券号，\r\n已将您与商城\r\n断开连接。
+890	公告/广播	[Notice]	[公告]
+1391	状态通知	Enter a note.	请输入广告词。
+2183	系统提示/错误	error code : %d (%s)	错误代码 : %d (%s)
+2184	系统提示/错误	error code : %d (%s)\r\n%s	错误代码 : %d (%s)\r\n%s
+2301	状态通知	Failed in creating security thread	创建安全线程失败
+2507	系统提示/错误	This item cannot be moved.	该道具无法移动。
+3274	状态通知	This is the NX coupon number.\r\nRegister your coupon at www.nexon.net.	这是点券卡的卡号。\r\n请到 www.nexon.net 登记该点券卡。
+3345	状态通知	The Cash Shop is not available in the Trial Version.	体验版无法使用商城。
+3346	状态通知	Download the Full Client to customize your character!	下载完整客户端，打造您的角色！
+3351	系统提示/错误	GameGuard: Error Initializing (%d)\r\n\r\n	GameGuard：初始化错误 (%d)\r\n\r\n
+3352	状态通知	GameGuard is already running. Please reboot and try again.	GameGuard已在运行。请重新启动电脑后重试。
+3353	状态通知	The client has executed multiple times, or GameGuard is already open. Please close the game, and restart the client.	客户端已多次运行，或GameGuard已开启。请关闭游戏后重新启动客户端。
+3355	系统提示/错误	A GameGuard file is corrupt or missing. We recommend executing the GameGuard setup file for solution.	GameGuard文件损坏或缺失。建议运行GameGuard安装文件来解决。
+3357	系统提示/错误	An error occured while executing GameGuard. Please re-install the GameGuard setup file, then restart the client.	运行GameGuard时发生错误。请重新安装GameGuard安装文件，然后重启客户端。
+3359	状态通知	You have pressed Cancel during the update. If the cancellation is due to a lack of connection, then check the network connection, the firewall settings, or simply try again.	您在更新过程中按了取消。如果是因为连接问题而取消，请检查网络连接、防火墙设置，或直接重试。
+3360	状态通知	The collision has been detected between the program installed on your computer and Gameguard.	检测到您电脑上安装的程序与GameGuard发生冲突。
+3361	系统提示/错误	Unable to connect to the GameGuard update server. Please try reconnecting later, or check the network connection.	无法连接GameGuard更新服务器。请稍后重新连接，或检查网络连接。
+3362	系统提示/错误	An error occured during the update. Please try temporarily disabling the Virus Vaccine and restart the client, or change the system option, if you're using the PC-maintenance program.	更新过程中发生错误。请尝试暂时停用杀毒软件并重启客户端；如果您正在使用电脑维护类程序，请更改系统选项。
+3381	公告/广播	Your report has been successfully registered.\r\nYou have %d reports left this week.	举报已成功登记。\r\n本周还剩%d次举报机会。
+3382	公告/广播	Your report has been successfully registered.\r\nYou have no report left this week.	举报已成功登记。\r\n本周的举报机会已用完。
+3383	公告/广播	The report has been successfully made.\r\nYou may not report for the rest of the day.	举报已成功提交。\r\n今天无法再进行举报。
+3530	状态通知	Please re-check the phone company you entered.	请重新确认您输入的电信运营商。
+3628	确认询问	[%s]\r\nWould you like to register?	[%s]\r\n是否要登记？
+3743	公告/广播	This message had been deleted by another user.\r\nPlease check again.	该留言已被其他玩家删除。\r\n请重新确认。
+3745	公告/广播	This megaphone is only available for \r\ncharacters that are over Level 10.	该喇叭只有10级以上的角色才能使用。
+3746	系统提示/错误	Hired Merchant's Shop is only available for \r\ncharacters that are over Level 15.	雇用商人商店只有15级以上的角色才能使用。
+3747	系统提示/错误	Gachapon is only available for \r\ncharacters that are over Level 15.	转蛋机只有15级以上的角色才能使用。
+3748	系统提示/错误	This teleport rock is only available for \r\ncharacters that are over level 6.	该传送石只有6级以上的角色才能使用。
+3930	状态通知	The item is no longer available for use. Please re-sell the item to a store nearby.	该道具已无法使用。请卖给附近的商店。
+3931	状态通知	It has exceeded the limit that system allows.	已超过系统允许的上限。
+3992	状态通知	You do not have enough Gift Tokens \r\nin your account. Please charge your account \r\nwith Nexon Game Cards to receive \r\nGift Tokens to gift this item.	您账户中的礼品点数不足。\r\n请使用Nexon游戏点卡为账户充值，\r\n获得礼品点数后即可赠送该道具。
+3993	系统提示/错误	Due to technical difficulties,\r\nthis item cannot be sent at this time.\r\nPlease try again.	由于技术问题，\r\n该道具暂时无法赠送。\r\n请稍后再试。
+3994	状态通知	You may not gift items for \r\nit has been less than two weeks \r\nsince you first charged your account.	由于首次充值不足两周，\r\n暂时无法赠送道具。
+3995	系统提示/错误	Users with history of illegal activities\r\n may not gift items to others. Please make sure \r\nyour account is neither previously blocked, \r\nnor illegally charged with NX.	有违规记录的用户\r\n无法赠送道具。请确认\r\n您的账号之前没有被封停，\r\n也没有非法充值点券的记录。
+3996	状态通知	Due to limitations, \r\nyou may not gift this item as this time. \r\nPlease try again later.	由于限制，\r\n目前无法赠送该道具。\r\n请稍后再试。
+3997	状态通知	You have exceeded the amount of time \r\nyou can gift items to other characters.	已超过可以向其他角色赠送道具的时间限制。
+3998	系统提示/错误	This item cannot be gifted \r\ndue to technical difficulties. \r\nPlease try again later.	由于技术问题，\r\n该道具无法赠送。\r\n请稍后再试。
+3999	状态通知	The pet is either not equipped, or this item is not applicable for your pet.	宠物未装备，或该道具不适用于您的宠物。
+4000	状态通知	Double-click the item for a preview.	双击道具进行预览。
+4002	系统提示/错误	You cannot transfer a character under level 20.	20级以下的角色无法转区。
+4003	系统提示/错误	You cannot transfer a character that \r\nis currently married.	已结婚的角色\r\n无法转区。
+4004	系统提示/错误	You cannot transfer a character that \r\nis currently a Guild leader.	目前担任族长的角色\r\n无法转区。
+4005	系统提示/错误	You cannot transfer a character \r\nto the same world it is currently in.	无法转区到角色\r\n当前所在的世界。
+4006	系统提示/错误	You cannot transfer a character \r\ninto the new server world.	无法将角色转到\r\n新开的服务器世界。
+4007	状态通知	You may not transfer out of this \r\nworld at this time.	目前无法从该世界转出。
+4008	系统提示/错误	You cannot transfer a character into \r\na world that has no empty character slots.	目标世界没有空余角色栏，\r\n无法转入。
+4009	系统提示/错误	You cannot transfer a character if \r\nyour account has ever been blocked once.	账号曾被封停过的角色无法转区。
+4010	系统提示/错误	You cannot transfer a character that\r\n has already been transferred \r\nwithin the last 30 days.	30天内已经转过区的角色\r\n无法再次转区。
+4011	系统提示/错误	You cannot delete a character that\r\n is currently going through the transfer.	正在转区中的角色无法删除。
+4012	系统提示/错误	Your character cannot get married if\r\n it is currently going through the transfer.	正在转区中的角色无法结婚。
+4013	系统提示/错误	Your character cannot create a guild if\r\n it is currently going through the transfer.	正在转区中的角色无法创建家族。
+4014	系统提示/错误	You cannot request a transfer \r\nwith a character that \r\nis already in the process of transferring.	无法对已在转区流程中的角色\r\n申请转区。
+4015	系统提示/错误	You cannot transfer a character if \r\nyour account has already requested for a transfer.	该账号已申请过转区，无法再次转区。
+4016	系统提示/错误	You cannot create a new character \r\nunder the account that \r\nhas requested for a transfer.	已申请转区的账号无法创建新角色。
+4017	状态通知	You can only cancel the request \r\nwith a character that is currently \r\ngoing through the transfer.	只能取消正在转区中的角色的转区申请。
+4019	状态通知	%s has been transferred \r\nfrom %s	%s已从%s转区。
+4020	状态通知	The event has either ended or\r\nthis item is not available for free testing.	活动已结束，或\r\n该道具已无法免费体验。
+4232	确认询问	It'll cost you %d mesos to store it.\r\nAre you sure you want to do it?	存入仓库需要%d金币。\r\n确定要存放吗？
+4745	状态通知	The MapleStory Trading System is not available in the Trial Version.	体验版无法使用冒险岛交易系统。
+4821	确认询问	Your training as a Beginner has peaked.\r\nYou may now select your 1st Job Advancement \r\nand become a Bowman, Thief, Magician or Warrior! \r\nTo continue the adventure, you have to download \r\nthe full client. \r\nDo you want to download full client now? \r\n(It's totally free to download the full client!	新手的修炼已达到顶峰。\r\n现在可以进行1转，成为弓箭手、飞侠、魔法师或战士！\r\n要继续冒险，需要下载完整客户端。\r\n现在要下载完整客户端吗？\r\n（下载完整客户端完全免费！
+4822	状态通知	If you wish to download the full client later, \r\nyou can always visit maplestory.nexon.net \r\nand download it!	如果想稍后再下载完整客户端，\r\n可以随时访问 maplestory.nexon.net \r\n进行下载！
+4836	确认询问	Please download the full client to experience \r\nthe world of MapleStory. \r\nWould you like to download the full client\r\n from our website?	请下载完整客户端来体验\r\n冒险岛的世界。\r\n是否要前往我们的网站\r\n下载完整客户端？
+4895	系统提示/错误	HackShield Error : 0x%08x(%d)\r\n\r\n	HackShield错误 : 0x%08x(%d)\r\n\r\n
+4896	系统提示/错误	HackShield Initialization Error : 0x%08x(%d)\r\n\r\n	HackShield初始化错误 : 0x%08x(%d)\r\n\r\n
+4897	系统提示/错误	HackShield Update Error : 0x%08x(%d)\r\n\r\n	HackShield更新错误 : 0x%08x(%d)\r\n\r\n
+4898	系统提示/错误	Cannot read HSUpdate.env file.	无法读取HSUpdate.env文件。
+4899	系统提示/错误	Cannot write HSUpdate.env file.	无法写入HSUpdate.env文件。
+4900	系统提示/错误	Cannot connect to the server.	无法连接服务器。
+4901	系统提示/错误	An error occurred while inputting the network result.	输入网络结果时发生错误。
+4902	系统提示/错误	Cannot file HackShield update program-related files.	无法找到HackShield更新程序相关文件。
+4903	系统提示/错误	Cannot file HSUpdate.pt authentication file.	无法找到HSUpdate.pt认证文件。
+4905	系统提示/错误	Error occurs when another game client or another process is already executing HackShield. Since the HackShield vr.3.1 has been improved to allow HackShield running in a multi-process environment, this does not occur in the newer version clients. (Value = 0x201)	当其他游戏客户端或其他进程已在运行HackShield时会发生此错误。HackShield vr.3.1已改进为支持多进程环境运行，新版客户端中不会出现此错误。(Value = 0x201)
+4906	系统提示/错误	Error occurs when the game client is executed in the Compatibility Mode provided by Windows XP. Game execution in Compatibility Mode is judged as a user with ill intentions, so program must be ended and restarted. (Value = 0x004)	当游戏客户端在Windows XP提供的兼容模式下运行时会发生此错误。以兼容模式运行游戏会被视为恶意用户，因此必须结束并重新启动程序。(Value = 0x004)
+4908	系统提示/错误	Error occurs when the system has already finished initialization through calling _AhnHS_Initialize. _AhnHS_Initialize can only be called once at the program initialization stage, and cannot be called repeatedly. This can only occur in the developmental process, so no other processes need to be taken. (Value = 0x001)	当系统已通过调用_AhnHS_Initialize完成初始化时会发生此错误。_AhnHS_Initialize只能在程序初始化阶段调用一次，不能重复调用。此错误只会在开发过程中出现，无需其他处理。(Value = 0x001)
+4909	系统提示/错误	Error occurs when the pointer of the Callback function is set incorrectly or if the license key value is NULL. This can only occur in the developmental process, so no other processes need to be taken. (Value = 0x002)	当回调函数指针设置不正确或许可证密钥值为NULL时会发生此错误。此错误只会在开发过程中出现，无需其他处理。(Value = 0x002)
+4910	系统提示/错误	Error occurs when the game code set to initialization function' s parameter and the license key value do not match the actual values. This can only occur in the developmental process, so no other processes need to be taken. (Value = 0x100)	当初始化函数参数中设置的游戏代码或许可证密钥值与实际值不匹配时会发生此错误。此错误只会在开发过程中出现，无需其他处理。(Value = 0x100)
+4912	系统提示/错误	Error occurs when the hack prevention function Driver fails initialization. If driver initialization fails, the hack prevention function will not work normally, so program should be ended, and restarted. (Value = 0x102)	当防黑客功能驱动初始化失败时会发生此错误。驱动初始化失败时，防黑客功能将无法正常运行，因此应结束并重新启动程序。(Value = 0x102)
+4913	系统提示/错误	Error occurs while Debugger is running on the system. If this occurs during the developmental process, exclude option AHNHS_CHKOPT_KDTRACER. If this occurs in the version distributed to users, end game program and debugger, and re-execute as there is a possibility of hack attacks. (Value = 0x105)	当系统上有调试器运行时会发生此错误。如果发生在开发过程中，请排除AHNHS_CHKOPT_KDTRACER选项。如果发生在正式发布版本中，请结束游戏程序和调试器后重新运行，因为存在被黑客攻击的可能性。(Value = 0x105)
+4914	状态通知	You are disconnected from MapleStroy due to the attempting to hack. If you have any important issue, please contact us via our homepage	由于试图使用黑客程序，您已与冒险岛断开连接。如有重要问题，请通过我们的主页联系我们
+4915	状态通知	\r\n\r\nPlease send the detailed information through AhnReport	\r\n\r\n请通过AhnReport发送详细信息
+4916	系统提示/错误	Unable to receive skin file. \n Please try again later.	无法接收皮肤文件。 \n 请稍后再试。
+4917	系统提示/错误	Unable to read authentication file.	无法读取认证文件。
+4918	状态通知	Failed to analyze product setup ahn.ui file.	分析产品安装文件ahn.ui失败。
+4919	系统提示/错误	Unable to receive product setup ahn.ui file. \nPlease try again later.	无法接收产品安装文件ahn.ui。\n请稍后再试。
+4920	状态通知	Failed to verify product setup.	验证产品安装失败。
+4923	系统提示/错误	Unable to receive skin file. \nPlease try again later.	无法接收皮肤文件。 \n请稍后再试。
+4925	系统提示/错误	Unable to receive authentication file. \nPlease try again later.	无法接收认证文件。 \n请稍后再试。
+4926	系统提示/错误	Unable to save authentication file with product.	无法保存产品认证文件。
+4928	系统提示/错误	Unable to execute due to unsupported OS.	因操作系统不受支持，无法运行。
+4929	系统提示/错误	You have logged into the account without Administrator authority. \r\nProgram cannot be installed or used without the Administrator authority. \r\nPlease log in through account with Administrator authority.	您登录的账户没有管理员权限。\r\n没有管理员权限将无法安装或使用本程序。\r\n请使用具有管理员权限的账户登录。
+4930	系统提示/错误	Unable to receive file. \nPlease try again later.	无法接收文件。\n请稍后再试。
+4931	状态通知	Failed to analyze ahn.ui file of update program.	分析更新程序的ahn.ui文件失败。
+4933	系统提示/错误	Unable to receive update program's module.	无法接收更新程序的模块。
+4934	系统提示/错误	Unable to receive update program's setup.	无法接收更新程序的安装文件。
+4935	状态通知	Failed to verify update program setup.	验证更新程序安装文件失败。
+4936	状态通知	Failed to verify update program module.	验证更新程序模块失败。
+4937	系统提示/错误	An error occurred in the product information.	产品信息发生错误。
+4938	系统提示/错误	Unable to execute %1 file.	无法运行文件%1。
+4939	状态通知	Failed to unzip.	解压失败。
+4940	状态通知	Failed to move update program module.	移动更新程序模块失败。
+4941	状态通知	Authentication file has expired.	认证文件已过期。
+4942	系统提示/错误	An error occurred in Smart Update i installation program.	Smart Update i安装程序发生错误。
+4943	系统提示/错误	Cannot execute due to unsupported user authority.	因用户权限不受支持，无法运行。
+4946	状态通知	You do not have access to write file.	您没有写入文件的权限。
+4948	状态通知	Not Allowed URL	不允许的URL
+4949	系统提示/错误	The operation was canceled by the user.	操作已被用户取消。
+4950	状态通知	Not Allowed Process	不允许的进程
+4951	状态通知	Safety mode is not supported.	不支持安全模式。
+4952	系统提示/错误	Unknown error occurred.	发生未知错误。
+4953	状态通知	Failed during initialization cancellation.	初始化取消过程中失败。
+4957	状态通知	Failed during initialization.	初始化过程中失败。
+4959	状态通知	Update is not supported.	不支持更新。
+4960	状态通知	Failed during update process.	更新过程中失败。
+4962	状态通知	Failed to load update module.	加载更新模块失败。
+4963	状态通知	AOS MKD is not installed.	未安装AOS MKD。
+4964	系统提示/错误	An error occurred in AOS MKD compatibility. \r\nPlease terminate all MKD linked productings and re-execute.	AOS MKD兼容性发生错误。\r\n请终止所有与MKD相关的程序后重新运行。
+4967	系统提示/错误	Some API hooking is already done. (However, this is actually blocked and hooking program does not work.)	部分API已被挂钩。（实际上已被拦截，挂钩程序并未生效。）
+4972	系统提示/错误	Message hooking has been detected. This could not be blocked.	检测到消息挂钩。此行为无法被拦截。
+4986	系统提示/错误	Game did not connect to correct server.	游戏未连接到正确的服务器。
+5014	确认询问	%s\r\n will extend the item seal until %d-%d-%04d %02d:%02d.\r\n Do you want to proceed?	%s\r\n将把道具封印延长至%d月%d日%04d年 %02d:%02d。\r\n是否继续？
+5016	状态通知	%s's seal expires on %d-%d-%04d %02d:%02d. If you additionally use the timed seal item, you can extend the date.	%s的封印将于%d月%d日%04d年 %02d:%02d到期。如果再使用限时封印道具，可以延长到期日。
+5017	状态通知	You have to quit Family \r\nto move to another world.	必须先退出冒险学院，\r\n才能移动到其他世界。
+5018	系统提示/错误	You cannot add a Junior \r\nsince you've requested to change worlds.	由于您已申请移动世界，\r\n无法登录同学。
+5019	系统提示/错误	You cannot add a Junior \r\nthat has requested to change worlds.	无法登录已申请移动世界的同学。
+5042	状态通知	You must be over Level 30\r\nto purchase this item	购买该道具\r\n需要30级以上
+5043	状态通知	You do not have any empty character slots\r\nThe Maple life(B-Type) will create\r\na new character slot upon purchase.	您没有空余的角色栏\r\n购买枫叶人生（B型）后将创建\r\n新的角色栏。
+5044	系统提示/错误	You cannot create a new character\r\nin this world as all 12 slots are full.	该世界12个角色栏已全部用完，\r\n无法创建新角色。
+5045	状态通知	no more characters can be created.\r\nPlease check again	无法再创建更多角色。\r\n请重新确认
+5046	状态通知	You can not use this name.\r\nPlease check again	无法使用该角色名。\r\n请重新确认
+5047	状态通知	This name is currently being used.\r\nPlease check again.	该角色名正在被使用。\r\n请重新确认。
+5059	系统提示/错误	Cannot kick another user in this map	无法在此地图中踢出其他玩家
+5060	公告/广播	[Talent Show event] The Talent Show event has started. Please talk to NPC Gaga in towns to participate.	[才艺表演活动] 才艺表演活动已经开始。请与城镇中的NPC佳佳对话参与活动。
+5063	系统提示/错误	This item cannot be purchased \r\nwith MaplePoints.	该道具无法使用抵用券购买。
+5064	状态通知	Sorry for inconvinence. \r\nplease try again.	抱歉给您带来不便。 \r\n请重试。
+5193	状态通知	Spirits who receive #c%s#'s energy will give your character a boost. 1 Skill Point will be granted each time #c%s#'s level increases by 10.	接收到#c%s#能量的精灵会为您的角色提供加成。#c%s#的等级每提升10，就会获得1点技能点。
+5194	状态通知	The item's effects will disappear after the #cslot expiration date of %d(month)-%d(date)-%04d(year) at %02d(hour):%02d(minute).	该道具的效果将在#c有效期限 %d月%d日%04d年 %02d:%02d#后消失。
+5195	状态通知	The item will be equipped if you purchase a %s slot extender at the #c Cash Shop.#	在#c商城#购买%s栏扩展道具后，该道具即可装备。
+5206	状态通知	You used the item but nothing happened.	使用了道具，但没有任何效果。
+5207	系统提示/错误	Some items cannot be traded with other users and\r\n	部分道具无法与其他玩家交易，且\r\n
+5208	确认询问	If you purchase a %s(%dcash), you can equip \r\n the item for %d additional days. \r\n Refunds are not availabe after the purchase. \r\n Do you still wish to purchase it?	购买%s（%d点券）后，可再装备\r\n该道具%d天。\r\n购买后不予退款。\r\n仍然要购买吗？
+5209	状态通知	The time limit for the \r\n %s slot has been extended to %d(month)-%d(date)-%d(year) at %d(hour):%d(minute).	%s栏的时间限制已延长至\r\n%d月%d日%d年 %d:%d。
+5210	状态通知	You have added %s slots.	已增加%s栏。
+5211	状态通知	If you purchase this item, you will be able to equip\r\nadditional equipment items.	购买该道具后，可以装备\r\n更多装备物品。
+5213	确认询问	If you use this item, you will not be able\r\nto trade the item with other users.\r\nDo you really want to use this item?	使用该道具后，将无法\r\n与其他玩家交易该道具。\r\n真的要使用吗？
+5214	状态通知	Time Limit Expired	已超过时间限制
+5215	确认询问	Have you checked the\r\ntime limit on the item?	您检查过\r\n该道具的时间限制吗？
+5222	状态通知	Due to the effect of the Tresure Box, you will receive an additional %d%% points for %dseconds.	由于宝箱效果，将额外获得%d%%的点数，持续%d秒。
+5224	状态通知	Please use 'Trade'.	请使用“交易”。
+5226	系统提示/错误	Separation is not possible due to insufficient Mesos.\r\nYou will need %d Mesos to\r\nseparate with a Senior.	由于金币不足，无法诀别。\r\n与老师诀别需要%d金币。
+5227	系统提示/错误	Separation is not possible due to insufficient Mesos.\r\nYou will need %d Mesos to\r\nseparate with a Junior.	由于金币不足，无法诀别。\r\n与同学诀别需要%d金币。
+5229	确认询问	%d Reputation Points for yourself and %d Reputation Points for your Senior will be deducted\r\nand all lower Family members will be affected.\r\nDo you really want to separate from the selected character?	将从您自身扣除%d名声度，从您的老师扣除%d名声度，\r\n且所有下级冒险学院成员都会受到影响。\r\n真的要与所选角色诀别吗？
+5230	确认询问	%d Reputation Points will be deducted from you, \r\nand all lower Family members will be affected.\r\nDo you really want to separate from the selected character?	将从您自身扣除%d名声度，\r\n且所有下级冒险学院成员都会受到影响。\r\n真的要与所选角色诀别吗？
+5231	确认询问	%d Reputation Points for the Senior and %d Reputation Points for the 2nd Senior will be deducted, and all lower Family members will be affected.\r\nDo you really want to separate from the selected character?	将从老师扣除%d名声度，从老师的老师扣除%d名声度，且所有下级冒险学院成员都会受到影响。\r\n真的要与所选角色诀别吗？
+5232	确认询问	%d Reputations for the Senior will be deducted, and\r\nall lower Family members will be affected. Do you really want to separate from the selected character?	将从老师扣除%d名声度，\r\n且所有下级冒险学院成员都会受到影响。真的要与所选角色诀别吗？
+5233	状态通知	The family relation has been severed as %s has initiated a separation.	由于%s提出诀别，冒险学院关系已解除。
+5234	状态通知	Family relations have been severed as a Family member has initiated separation. %d Reputation Points will be deducted.	由于冒险学院成员提出诀别，冒险学院关系已解除。将扣除%d名声度。
+5235	状态通知	The family relation has been severed as %s has initiated a seperation. Reputation Points will be deducted by %d.	由于%s提出诀别，冒险学院关系已解除。名声度将扣除%d。
+5239	状态通知	A portion was not found after falling on the ground.	掉落在地上后未找到碎片。
+5240	状态通知	%s has disappeared as the time limit has passed.	%s因超过时间限制而消失了。
+5242	状态通知	Time limit extension is not possible on this item.	该道具无法延长时限。
+5243	状态通知	Failed to connect to the update server. Please try again later or check the status of your network.	无法连接更新服务器。请稍后再试，或检查您的网络状态。
+5244	系统提示/错误	HackShield has not initialized. Please try again after rebooting, closing other programs, or running a virus or spyware check.	HackShield未初始化。请重启电脑、关闭其他程序，或进行病毒/间谍软件查杀后重试。
+5245	状态通知	The virus or hacking tool detection module has failed to load.  You may have insufficient memory or your computer may be infected with a virus.	病毒或黑客工具检测模块加载失败。您可能内存不足，或电脑已感染病毒。
+5246	状态通知	Hackshield file does not exist or has been modified.	HackShield文件不存在或已被修改。
+5247	状态通知	The game is already loaded or HackShield is already in use. Please try again after ending the game.	游戏已在运行，或HackShield正在被使用。请结束游戏后重试。
+5248	状态通知	A hacking program has been found. Please close any unnecessary programs and try again.	检测到黑客程序。请关闭不必要的程序后重试。
+5249	系统提示/错误	Access authority for Hackshield files is invalid.	HackShield文件的访问权限无效。
+5250	系统提示/错误	This is an error that occurs when there is an unknown problem.	这是存在未知问题时发生的错误。
+5251	系统提示/错误	HackShield: Initialization Error (0x%08X)\r\n\r\n	HackShield：初始化错误 (0x%08X)\r\n\r\n
+5252	状态通知	HackShield: Hacking Detected (0x%08X)\r\n\r\nA hacking attempt has been detected. MapleStory will now close. Please visit our website for more information.	HackShield：检测到黑客行为 (0x%08X)\r\n\r\n检测到试图使用黑客程序。冒险岛即将关闭。详情请访问我们的网站。
+5253	系统提示/错误	HackShield: Update Error (0x%08X)\r\n\r\n	HackShield：更新错误 (0x%08X)\r\n\r\n
+5255	系统提示/错误	You cannot move anymore in this area.\r\nYou will be deleted off the list.	无法在该区域继续移动。\r\n您将从名单中被删除。
+5256	系统提示/错误	You cannot open a store in this channel. Please use a different channel.	无法在此频道开设商店。请更换其他频道。
+5257	系统提示/错误	MyKeyDefense: Initializatin Error (0x%08X)\r\n\r\n	MyKeyDefense：初始化错误 (0x%08X)\r\n\r\n
+5258	确认询问	This item cannot be recovered once dropped. However, It is possible to transfer it to a different character on the same account by using the storage system. \r\n\r\nDo you really want to drop this item?	该道具一旦丢弃将无法恢复。但可以通过仓库系统转交给同一账号的其他角色。 \r\n\r\n真的要丢弃该道具吗？
+5259	确认询问	If you invest your AP in HP or MP, your character may have\r\ninsufficient stats to become as strong as it could be.\r\nDo you still wish to raise this skill?	如果将属性点投入HP或MP，角色可能\r\n因能力值不足而无法发挥全部实力。\r\n仍然要提升该技能吗？
+5264	状态通知	Congratulations. You've won a reward in the Excavation Hunt with %d points. Please go to the store to receive your gift.	恭喜您。您在遗迹发掘活动中以%d分获胜。请到商店领取您的奖励。
+5269	状态通知	%s is currently ranked in the Top 10 of the Artifact Hunt.	%s目前在遗物寻宝中排名前10。
+5270	确认询问	Cash Items become untradable\r\nonce they have been traded and \r\nMaple Points cannot be accumulated\r\nusing Item Deletions in the Cash Shop.\r\n\r\nDo you really want to buy?	现金道具交易一次后将无法再次交易，\r\n且在商城删除道具不会累积抵用券。\r\n\r\n真的要购买吗？
+5271	系统提示/错误	A cash item purchase was canceled\r\ndue to a server check.	由于服务器检查，现金道具购买已被取消。
+5272	状态通知	Purchase was canceled because there was an item\r\nthat disappeared because it expired.	购买已取消，因为有道具\r\n因过期而消失。
+5274	状态通知	Time limit extension is not possible.	无法延长时限。
+5276	状态通知	You have received a letter from an Admin.\r\nPlease click on the envelope.	您收到了管理员寄来的信件。\r\n请点击信封。
+5277	确认询问	Cash Items become untradable\r\nonce they have been traded and \r\nMaple Points cannot be accumulated\r\nusing Item Deletions in the Cash Shop.\r\n\r\nDo you really want to trade?	现金道具交易一次后将无法再次交易，\r\n且在商城删除道具不会累积抵用券。\r\n\r\n真的要交易吗？
+5278	系统提示/错误	A cash item trade was canceled\r\ndue to a server check.	由于服务器检查，现金道具交易已被取消。
+5279	状态通知	Trade was canceled because there was an item\r\nthat disappeared because it expired.	交易已取消，因为有道具\r\n因过期而消失。
+5303	状态通知	If you purchase a %s slot addtion in the Cash Shop, you can additionally equip a %s.	在商城购买%s栏扩展道具后，可以额外装备%s。
+5307	公告/广播	[%s]'s broadcasting will begin. Please turn up the volume.	[%s]的广播即将开始。请调大音量。
+5308	公告/广播	[%s]'s broadcasting has ended.	[%s]的广播已结束。
+5309	状态通知	\r\n#The item you purchase with NX can be traded once with another user prior to use.#	\r\n#使用点券购买的道具，在使用前可以与其他玩家交易一次。#
+5310	系统提示/错误	\r\n#You cannot trade a used item with another player.#	\r\n#已使用过的道具无法与其他玩家交易。#
+5311	系统提示/错误	You cannot acquire any items because the game file has been damaged. Please try again after reinstalling the game.	游戏文件损坏，无法获得任何道具。请重新安装游戏后再试。
+5312	状态通知	The force of the underground has pushed you out.	地下的力量把您推了出来。
+5313	系统提示/错误	Characters whose level is below Lv. 10, such as Beginners, Noblesses, and Legends cannot form a party.	10级以下的新手、初心者、战童无法创建组队。
+5315	状态通知	An illegal program has been detected.\r\nPlease try again after reinstalling the game.\r\n\r\nIllegal program usage could result in banning from the game.	检测到非法程序。\r\n请重新安装游戏后再试。\r\n\r\n使用非法程序可能导致游戏账号被封停。
+5316	状态通知	press 1, 2, or 3 to change the group you'd like to talk to.	按1、2或3切换要对话的聊天分组。
+5317	系统提示/错误	You cannot acquire any items.	无法获得任何道具。
+5318	系统提示/错误	You cannot use this item\r\nbecause a similar event is in progress.	由于类似活动正在进行，\r\n无法使用该道具。
+5321	状态通知	You got a title!	获得了称号！
+5402	系统提示/错误	This scroll cannot be used.	该卷轴无法使用。
+5404	系统提示/错误	The item and the scroll cannot be combined.	该道具与卷轴无法组合。
+5405	系统提示/错误	Unknowun error %d.	未知错误 %d。
+5415	状态通知	You have acquired %d Gachapon Stamps\r\nby purchasing the Gachapon Ticket.	购买转蛋券后，\r\n获得了%d个转蛋印花。
+5416	系统提示/错误	You cannot receive any Gachapon Stamps\r\nbecause you do not have enough room in\r\nyour Etc window.	由于您的其他栏没有足够空间，\r\n无法获得转蛋印花。
+5417	状态通知	Purchase with %d points and get %d Stamps!\r\nThe following Stamp can be received with %d points.\r\nAccumulated %d points; total number acquired %d.\r\nIf you exit the Cash Shop\r\nthe points you have accumulated will be reset.	使用%d点购买即可获得%d个印花！\r\n以下印花可通过%d点获得。\r\n已累计%d点；累计获得%d个。\r\n如果离开商城，\r\n累计的点数将被重置。
+5433	系统提示/错误	You need %d more %s(s)	还需要%d个%s
+5434	系统提示/错误	You need more items	还需要更多道具
+5439	确认询问	With the weapon that %s currently has equipped,\r\nthis item can't be used.\r\nDo you still wish to give it as a gift?	由于%s当前装备的武器，\r\n该道具无法使用。\r\n仍要作为礼物赠送吗？
+5440	确认询问	The pet that %s is currently raising\r\ncannot be equipped with this item.\r\nDo you still wish to give it as a gift?	%s当前饲养的宠物\r\n无法装备该道具。\r\n仍要作为礼物赠送吗？
+5441	确认询问	This item can only be equipped on pets.\r\nDo you still wish to give it as a gift?	该道具只能装备在宠物身上。\r\n仍要作为礼物赠送吗？
+5442	确认询问	This item cannot be used without a pet\r\nnor can it be used on a pet that's no longer living.\r\nDo you really want to give it as a gift?	该道具在没有宠物时无法使用，\r\n也无法用于已死去的宠物。\r\n真的要作为礼物赠送吗？
+5443	确认询问	With the pet that %s currently has equipped,\r\nthis item can't be used.\r\nDo you still wish to give it as a gift?	由于%s当前装备的宠物，\r\n该道具无法使用。\r\n仍要作为礼物赠送吗？
+5444	确认询问	Without a Monster Mount skill,\r\nthis item can't be used.\r\nDo you still wish to give it as a gift?	没有骑宠技能，\r\n该道具无法使用。\r\n仍要作为礼物赠送吗？
+5455	公告/广播	#eWelcome to the Test World#n\r\nThis is a place that has been created in order to test\r\ncontent that is planned to be revised or added in the real MapleStory World.\r\nAs such, the following limitations apply.\r\n\r\n#b1. In the Test World, character development has been\r\nset on "easy" for the sake of testing. This info \r\nwill not be applied in the real MapleStory World.\r\n2. Character information from the Test World will never\r\nbe shared with the real MapleStory World. \r\n3. Character information in the Test World can be reset\r\nwithout any notice or agreement from the user.\r\n4. The Test World service may be stopped without\r\nany notice.\r\n5. Content tested here may not be\r\napplied to the real MapleStory World.\r\n6. When the tested contents are added to the real MapleStory World, there may be\r\nmodifications made to the stats.\r\n	#e欢迎来到测试服#n\r\n这里是为了测试拟在正式冒险岛世界\r\n修改或添加的内容而创建的场所。\r\n因此有以下限制。\r\n\r\n#b1. 测试服中，为了便于测试，角色成长被\r\n设定为“简单”。此设定不会应用\r\n到正式冒险岛世界。\r\n2. 测试服的角色信息永远不会\r\n与正式冒险岛世界共享。 \r\n3. 测试服的角色信息可能在没有\r\n通知或征得用户同意的情况下被重置。\r\n4. 测试服的服务可能随时\r\n中止且不另行通知。\r\n5. 此处测试的内容可能不会\r\n应用到正式冒险岛世界。\r\n6. 测试内容添加到正式冒险岛世界时，\r\n可能会对数值进行修改。\r\n
+5456	状态通知	The key you just pressed is a key that has been disabled.	您刚按下的按键已被停用。
+5458	状态通知	The changes you've made to the Quick Slot will also be canceled.	您对快捷键栏所做的修改也将一并取消。
+5459	状态通知	The changes you've made to the Quick Slots will also change to default.	您对快捷键栏所做的修改将恢复为默认设置。
+5460	状态通知	You have revived on the current map through the effect of the Spirit Stone.	您通过灵魂石的效果在当前地图复活了。
+5461	状态通知	The Entitlement does not apply because your level does not match the corresponding area.	由于您的等级与相应区域不符，特权无法适用。
+5462	系统提示/错误	This map can only be entered by party members.	该地图只有组队成员才能进入。
+5463	状态通知	You have been kicked out of the map because you left the party.	由于您退出了组队，已被请出该地图。
+5464	系统提示/错误	Your current condition will not permit you to use a potion.	您当前的状态无法使用药水。
+5465	系统提示/错误	You will receive damage if you become covered with the Shadow of Darkness and cannot move.	如果被黑暗之影覆盖而无法移动，将会受到伤害。
+5466	状态通知	The fear of darkness has overtaken you! Your range of vision has been narrowed.	黑暗的恐惧笼罩了您！视野变窄了。
+5471	确认询问	This contains an item that will disappear once \r\nthe expiration date has passed. Do you want to give it as a gift?	其中包含过期后会消失的道具。仍要作为礼物赠送吗？
+5472	确认询问	%s does not have an item that \r\nthe Scissors of Karma can be used on.\r\nDo you still wish to give it as a gift?	%s没有可以使用宿命剪刀的道具。\r\n仍要作为礼物赠送吗？
+5473	状态通知	You receive damage having been covered by the Shadow of Darkness.	被黑暗之影覆盖，受到了伤害。
+5487	状态通知	One of your party members has been banished from the room due to abnormal termination.	由于异常退出，您的一名组队成员被请出了房间。
+5488	状态通知	\r\n#cExpiration Date: %dYear %dMonth %dDay %dHour %dMinute#	\r\n#c到期时间: %d年%d月%d日%d时%d分#
+5489	系统提示/错误	This item cannot be used in this map.	该道具无法在此地图使用。
+5536	确认询问	Due to job limitations, %s can't\r\nuse this item.\r\nDo you still wish to give it as a gift?	由于职业限制，%s无法\r\n使用该道具。\r\n仍要作为礼物赠送吗？
+5555	状态通知	Only %d will be sold.	只出售%d个。
+5569	系统提示/错误	The store cannot be opened as the time limit has passed.	已超过时限，无法开设商店。
+5570	状态通知	The time limit has expired.	已超过时限。
+5593	系统提示/错误	Unable to receive authentication file information.	无法接收认证文件信息。
+5594	系统提示/错误	Unable to start thread.	无法启动线程。
+5604	公告/广播	[Spirit Week Event] Item Drop Rate will be doubled between 3pm and 9pm for 30 minutes starting at the top of the hour.	[精神周活动] 下午3点至9点，每小时整点开始的30分钟内道具掉落率加倍。
+5605	公告/广播	[Spirit Week Event] NPC Cassandra will reward you with the "Owl of Minerva" if you keep her Candle burning for 1 hour. (above Lv.10)	[精神周活动] 让NPC卡珊德拉的蜡烛燃烧1小时，即可获得“雅典娜的猫头鹰”奖励。（10级以上）
+5606	公告/广播	[Spirit Week Event] You can trade in your scroll with a scroll that has a higher Success Rate of 5% from NPC Cassandra. (above Lv.10)	[精神周活动] 可以在NPC卡珊德拉处，用您的卷轴换取成功率高5%的卷轴。（10级以上）
+5607	公告/广播	[Spirit Week Event] You will be given a higher chance of acquiring desirable weapons and armor, as well as a 5% discount on selected potions at the shop.	[精神周活动] 获得心仪武器和防具的几率更高，商店内部分药水还有5%折扣。
+5608	公告/广播	[Spirit Week Event] You will be rewarded the "Teleport Rock" if you keep NPC Cassandra's Candle burning for 1 hour. (above Lv.10)	[精神周活动] 让NPC卡珊德拉的蜡烛燃烧1小时，即可获得“传送石”奖励。（10级以上）
+5609	公告/广播	[Spirit Week Event] You will receive 2x Party Bonus EXP.	[精神周活动] 组队奖励经验值变为2倍。
+5610	公告/广播	[Spirit Week Event] You will receive an additional 30% Bonus EXP for the first 5 quests you complete today. (Quests with less than 1 Bonus EXP excluded)	[精神周活动] 今天最先完成的5个任务将额外获得30%奖励经验值。（奖励经验值不足1的任务除外）
